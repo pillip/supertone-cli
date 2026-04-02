@@ -18,6 +18,47 @@ tts_app = typer.Typer(
     help="Text-to-speech commands.",
 )
 
+VALID_MODELS = {
+    "sona_speech_1",
+    "supertonic_api_1",
+    "sona_speech_2",
+    "sona_speech_2_flash",
+}
+
+# Model-parameter compatibility matrix
+_FLASH_DISALLOWED = {"similarity", "text_guidance"}
+_SUPERTONIC_ALLOWED = {"speed"}
+_STREAM_MODELS = {"sona_speech_1"}
+
+
+def validate_params(model: str, **kwargs: object) -> None:
+    """Validate model-parameter compatibility."""
+    if model not in VALID_MODELS:
+        valid = ", ".join(sorted(VALID_MODELS))
+        raise InputError(f"Unknown model: {model}. Valid models: {valid}")
+
+    # Filter to only provided (non-None) params
+    params = {k: v for k, v in kwargs.items() if v is not None}
+
+    if model == "sona_speech_2_flash":
+        bad = set(params) & _FLASH_DISALLOWED
+        if bad:
+            raise InputError(
+                f"Parameters not supported by {model}: {', '.join(sorted(bad))}"
+            )
+
+    if model == "supertonic_api_1":
+        bad = set(params) - _SUPERTONIC_ALLOWED - {"stream"}
+        if bad:
+            raise InputError(
+                f"Parameters not supported by {model}: "
+                f"{', '.join(sorted(bad))}. "
+                f"Only speed is supported."
+            )
+
+    if params.get("stream") and model not in _STREAM_MODELS:
+        raise InputError(f"Streaming requires sona_speech_1, but model is {model}.")
+
 
 def _resolve_text(
     text: str | None,
