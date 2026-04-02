@@ -1,12 +1,11 @@
-# Review Notes — ISSUE-011
+# Review Notes — ISSUE-010
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — File existence and format validation before upload.
-- **Severity: Info** — Lazy import of clone_voice inside function body.
+- **Severity: Info** — Uses module-level import for mockability.
 
 ### Changes Made
 None.
@@ -14,5 +13,3 @@ None.
 ## Security Findings
 
 **Verdict**: No issues
-
-- File read is user-initiated, path from CLI arg only.
