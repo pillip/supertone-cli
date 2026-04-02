@@ -1,18 +1,15 @@
-# Review Notes — ISSUE-008
+# Review Notes — ISSUE-012
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — Clean implementation using dataclasses asdict for JSON serialization.
-- **Severity: Info** — Table/JSON output follows stdout/stderr convention from output.py.
+- **Severity: Info** — Simple, clean implementation.
 
 ### Changes Made
-None required.
+None.
 
 ## Security Findings
 
 **Verdict**: No issues
-
-- No user input beyond CLI flags. No file operations. No secrets exposed.
