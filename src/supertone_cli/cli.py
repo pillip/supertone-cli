@@ -9,7 +9,7 @@ import typer
 
 from supertone_cli import __version__
 from supertone_cli.commands.config_cmd import config_app
-from supertone_cli.commands.tts import register_tts_command
+from supertone_cli.commands.tts import register_predict_command, register_tts_command
 from supertone_cli.commands.usage import register_usage_command
 from supertone_cli.commands.voices import voices_app
 from supertone_cli.errors import CLIError, sanitize_message
@@ -23,6 +23,7 @@ app = typer.Typer(
 app.add_typer(config_app)
 app.add_typer(voices_app)
 register_tts_command(app)
+register_predict_command(app)
 register_usage_command(app)
 
 
