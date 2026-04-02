@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
 import typer
 
 from supertone_cli import __version__
+from supertone_cli.errors import CLIError, sanitize_message
+from supertone_cli.output import print_error
 
 app = typer.Typer(
     name="supertone",
@@ -35,7 +40,24 @@ def main_callback(
 
 def main() -> None:
     """Entry point registered in pyproject.toml [project.scripts]."""
-    app()
+    try:
+        app()
+    except CLIError as exc:
+        api_key = os.environ.get("SUPERTONE_API_KEY", "")
+        msg = sanitize_message(str(exc), api_key)
+        print_error(msg)
+        sys.exit(exc.exit_code)
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except BrokenPipeError:
+        # Silently handle broken pipes (e.g., `supertone ... | head`)
+        sys.stderr.close()
+        sys.exit(0)
+    except Exception as exc:
+        api_key = os.environ.get("SUPERTONE_API_KEY", "")
+        msg = sanitize_message(str(exc), api_key)
+        print_error(f"Unexpected error: {msg}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
