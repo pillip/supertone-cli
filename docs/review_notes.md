@@ -1,12 +1,11 @@
-# Review Notes — ISSUE-015
+# Review Notes — ISSUE-007
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — CI matrix covers 3 Python versions on 2 OSes.
-- **Severity: Info** — Coverage threshold enforced at 80%.
+- **Severity: Info** — Batch logic cleanly separated from single-file TTS.
 
 ### Changes Made
 None.
@@ -14,5 +13,3 @@ None.
 ## Security Findings
 
 **Verdict**: No issues
-
-- No secrets in workflow. Uses standard GitHub Actions.
