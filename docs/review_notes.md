@@ -1,11 +1,11 @@
-# Review Notes — ISSUE-006
+# Review Notes — ISSUE-009
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — Validation matrix cleanly separates model constraints.
+- **Severity: Info** — Good refactoring with shared _render_voices helper.
 
 ### Changes Made
 None.
