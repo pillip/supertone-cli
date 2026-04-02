@@ -100,6 +100,68 @@ def _resolve_text(
     return content
 
 
+def _is_batch_input(input_path: str | None) -> bool:
+    """Check if input is a directory (batch mode)."""
+    if not input_path:
+        return False
+    return Path(input_path).is_dir()
+
+
+def _collect_batch_files(input_path: str) -> list[Path]:
+    """Collect .txt files from a directory."""
+    p = Path(input_path)
+    files = sorted(p.glob("*.txt"))
+    if not files:
+        raise InputError(f"No .txt files found in: {input_path}")
+    return files
+
+
+def _run_batch(
+    input_path: str,
+    outdir: str,
+    output_format: str,
+    voice: str,
+    model: str,
+    lang: str,
+    fail_fast: bool,
+) -> None:
+    """Process batch TTS for all .txt files in a directory."""
+    files = _collect_batch_files(input_path)
+    out = Path(outdir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    succeeded = 0
+    failed = 0
+
+    for f in files:
+        text = f.read_text(encoding="utf-8").strip()
+        if not text:
+            continue
+        out_file = out / f"{f.stem}.{output_format}"
+        try:
+            audio = create_speech(
+                text=text,
+                voice=voice,
+                model=model,
+                lang=lang,
+                output_format=output_format,
+            )
+            out_file.write_bytes(audio)
+            succeeded += 1
+        except Exception as exc:
+            failed += 1
+            typer.echo(f"Error: {f.name}: {exc}", err=True)
+            if fail_fast:
+                raise InputError(f"Batch stopped: {f.name} failed") from exc
+
+    typer.echo(
+        f"{succeeded} succeeded, {failed} failed",
+        err=True,
+    )
+    if failed:
+        raise InputError(f"{failed} file(s) failed in batch")
+
+
 def _run_tts(
     text: str | None,
     input: str | None,
@@ -109,6 +171,8 @@ def _run_tts(
     model: str | None,
     lang: str | None,
     format: str,
+    outdir: str | None = None,
+    fail_fast: bool = False,
 ) -> None:
     """Core TTS logic shared by the command."""
     resolved_voice = voice or get_default("default_voice")
@@ -120,6 +184,19 @@ def _run_tts(
 
     resolved_model = model or get_default("default_model") or "sona_speech_2"
     resolved_lang = lang or get_default("default_lang") or "ko"
+
+    # Batch mode: directory input + outdir
+    if _is_batch_input(input) and outdir:
+        _run_batch(
+            input,  # type: ignore[arg-type]
+            outdir,
+            output_format,
+            resolved_voice,
+            resolved_model,
+            resolved_lang,
+            fail_fast,
+        )
+        return
 
     if format == "json" and output == "-":
         raise InputError(
@@ -189,6 +266,16 @@ def register_tts_command(app: typer.Typer) -> None:
             "-f",
             help="Output format: text or json.",
         ),
+        outdir: Optional[str] = typer.Option(
+            None,
+            "--outdir",
+            help="Output directory for batch mode.",
+        ),
+        fail_fast: bool = typer.Option(
+            False,
+            "--fail-fast",
+            help="Stop batch on first error.",
+        ),
     ) -> None:
         """Generate speech from text."""
         _run_tts(
@@ -200,6 +287,8 @@ def register_tts_command(app: typer.Typer) -> None:
             model,
             lang,
             format,
+            outdir=outdir,
+            fail_fast=fail_fast,
         )
 
 
