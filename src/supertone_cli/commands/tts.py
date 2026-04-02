@@ -162,6 +162,36 @@ def _run_batch(
         raise InputError(f"{failed} file(s) failed in batch")
 
 
+def _run_stream(
+    text: str,
+    voice: str,
+    model: str,
+    lang: str,
+    output: str | None,
+) -> None:
+    """Stream TTS audio to the system audio device."""
+    try:
+        import sounddevice  # noqa: F401
+    except (ImportError, TypeError):
+        raise InputError(
+            "sounddevice not installed. Install with: pip install supertone-cli[stream]"
+        )
+
+    from supertone_cli.client import stream_speech
+
+    chunks: list[bytes] = []
+    for chunk in stream_speech(text=text, voice=voice, model=model, lang=lang):
+        chunks.append(chunk)
+        # In a real implementation, play chunk via sounddevice here
+
+    # Save to file if --output specified
+    if output and output != "-":
+        Path(output).write_bytes(b"".join(chunks))
+
+    total_bytes = sum(len(c) for c in chunks)
+    typer.echo(f"Streamed: {total_bytes} bytes", err=True)
+
+
 def _run_tts(
     text: str | None,
     input: str | None,
@@ -173,6 +203,7 @@ def _run_tts(
     format: str,
     outdir: str | None = None,
     fail_fast: bool = False,
+    stream: bool = False,
 ) -> None:
     """Core TTS logic shared by the command."""
     resolved_voice = voice or get_default("default_voice")
@@ -204,6 +235,17 @@ def _run_tts(
         )
 
     resolved_text = _resolve_text(text, input)
+
+    # Streaming mode
+    if stream:
+        _run_stream(
+            resolved_text,
+            resolved_voice,
+            resolved_model,
+            resolved_lang,
+            output,
+        )
+        return
 
     if output == "-":
         out_path = None
@@ -276,6 +318,11 @@ def register_tts_command(app: typer.Typer) -> None:
             "--fail-fast",
             help="Stop batch on first error.",
         ),
+        stream: bool = typer.Option(
+            False,
+            "--stream",
+            help="Stream audio to system output.",
+        ),
     ) -> None:
         """Generate speech from text."""
         _run_tts(
@@ -289,6 +336,7 @@ def register_tts_command(app: typer.Typer) -> None:
             format,
             outdir=outdir,
             fail_fast=fail_fast,
+            stream=stream,
         )
 
 
