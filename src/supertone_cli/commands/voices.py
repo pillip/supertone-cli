@@ -11,6 +11,8 @@ from supertone_cli.client import list_voices, search_voices
 from supertone_cli.errors import InputError
 from supertone_cli.output import print_json, print_table
 
+SUPPORTED_AUDIO_FORMATS = {".wav", ".mp3", ".ogg", ".flac"}
+
 voices_app = typer.Typer(name="voices", help="Voice management commands.")
 
 
@@ -96,3 +98,44 @@ def search_cmd(
             "No voices match the given filters.",
             err=True,
         )
+
+
+@voices_app.command("clone")
+def clone_cmd(
+    name: str = typer.Option(..., "--name", "-n", help="Name for the cloned voice."),
+    sample: str = typer.Option(
+        ..., "--sample", "-s", help="Path to audio sample file."
+    ),
+    format: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="Output format: text or json.",
+    ),
+) -> None:
+    """Clone a voice from an audio sample."""
+    from pathlib import Path
+
+    from supertone_cli.client import clone_voice
+
+    p = Path(sample)
+    if not p.exists():
+        raise InputError(f"File not found: {sample}")
+
+    suffix = p.suffix.lower()
+    if suffix not in SUPPORTED_AUDIO_FORMATS:
+        supported = ", ".join(sorted(SUPPORTED_AUDIO_FORMATS))
+        raise InputError(f"Unsupported audio format: {suffix}. Supported: {supported}")
+
+    result = clone_voice(name, str(p))
+
+    if format == "json":
+        print_json(asdict(result))
+        return
+
+    typer.echo(result.voice_id)
+    typer.echo(
+        f"Voice '{name}' created. "
+        f'Use: supertone tts --voice {result.voice_id} "text"',
+        err=True,
+    )
