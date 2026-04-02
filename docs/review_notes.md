@@ -1,14 +1,14 @@
-# Review Notes — ISSUE-003
+# Review Notes — ISSUE-004
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — Config file permissions enforced to 0o600 on every write, satisfying NFR-003.
-- **Severity: Info** — VALID_CONFIG_KEYS used for validation in both config.py and config_cmd.py.
-- **Severity: Info** — api_key masked in `config list` output to prevent accidental exposure.
-- **Severity: Info** — `config init` properly checks stdin.isatty() and rejects non-interactive use.
+- **Severity: Info** — client.py is the sole SDK import boundary as required by architecture.
+- **Severity: Info** — Lazy import of supertone SDK inside get_client() preserves startup latency.
+- **Severity: Info** — All 7 data models are frozen dataclasses matching data_model.md spec.
+- **Severity: Info** — _is_auth_error heuristic is reasonable for unknown SDK exception hierarchy.
 
 ### Changes Made
 None required.
@@ -20,7 +20,6 @@ None.
 
 **Verdict**: No issues
 
-- Config file written with 0o600 permissions (owner-only read/write).
-- API key masked in list output.
-- Environment variable override (SUPERTONE_API_KEY) checked first, never written to disk.
-- No secrets hardcoded or logged.
+- API key is obtained from config module (env var or 0o600 file), never hardcoded.
+- SDK exceptions are translated, not passed raw to user output.
+- No secrets in error messages (sanitize_message handles this at cli.py level).
