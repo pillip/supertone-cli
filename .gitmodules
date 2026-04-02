@@ -1,0 +1,3 @@
+[submodule ".claude-kit"]
+	path = .claude-kit
+	url = git@github.com:pillip/claude-dev-kit.git

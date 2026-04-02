@@ -1,0 +1,833 @@
+# Issues — Supertone CLI (Phase 1)
+
+**Generated**: 2026-04-03
+**Source**: PRD Digest, Requirements v1.0, UX Spec v1.0, Architecture v1.0
+
+---
+
+## Dependency Graph (Critical Path)
+
+```
+ISSUE-001 (scaffold)
+    |
+    v
+ISSUE-002 (errors + output)
+    |
+    +---> ISSUE-003 (config module + config commands)
+    |         |
+    |         v
+    |     ISSUE-004 (client wrapper)
+    |         |
+    |         +---> ISSUE-005 (tts command - single)
+    |         |         |
+    |         |         +---> ISSUE-006 (tts params + validation)
+    |         |         |         |
+    |         |         |         +---> ISSUE-007 (batch processing)
+    |         |         |         +---> ISSUE-010 (tts predict)
+    |         |         |         +---> ISSUE-013 (streaming TTS)
+    |         |         |
+    |         |         +---> ISSUE-007 (batch processing)
+    |         |
+    |         +---> ISSUE-008 (voices list)
+    |         +---> ISSUE-009 (voices search)  [parallel with 008]
+    |         +---> ISSUE-011 (voices clone)   [parallel with 008]
+    |         +---> ISSUE-012 (usage command)   [parallel with 008]
+    |
+    +---> ISSUE-014 (lazy imports + startup benchmark) [after ISSUE-005]
+    +---> ISSUE-015 (CI pipeline) [after ISSUE-005]
+```
+
+**Parallel tracks after ISSUE-004:**
+- Track A: TTS commands (005 -> 006 -> 007, 010, 013)
+- Track B: Voice commands (008, 009, 011 — all parallel)
+- Track C: Usage command (012)
+- Track D: Polish (014, 015)
+
+---
+
+### ISSUE-001: Scaffold project with uv, pyproject.toml, and package structure
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+A working Python package exists that can be installed with `pip install -e .` and exposes the `supertone` CLI entry point that prints help text.
+
+#### Scope (In/Out)
+- In: `pyproject.toml` with project metadata, dependencies (typer, rich, tomli_w, supertone SDK stub), optional extras (stream: sounddevice), `[project.scripts]` entry point, `src/supertone_cli/` package directory with `__init__.py`, empty module files for all 7 modules (`cli.py`, `config.py`, `client.py`, `output.py`, `errors.py`, `commands/__init__.py`, `commands/tts.py`, `commands/voices.py`, `commands/usage.py`, `commands/config_cmd.py`), `tests/` directory with `conftest.py`, pytest config in `pyproject.toml`, ruff config
+- Out: Any command logic beyond `--help` and `--version`
+
+#### Acceptance Criteria (DoD)
+- [ ] Given the repo is cloned, when `uv sync` is run, then all dependencies are installed without errors
+- [ ] Given dependencies are installed, when `uv run supertone --help` is run, then help text is printed to stdout and exit code is 0
+- [ ] Given dependencies are installed, when `uv run supertone --version` is run, then the version string is printed and exit code is 0
+- [ ] Given the project structure, when `uv run pytest -q` is run, then tests pass (at minimum a smoke test)
+- [ ] Given `pyproject.toml`, then `supertone-cli` is the package name, Python `>=3.11` is required, and `supertone` is the console script entry point
+
+#### Implementation Notes
+- Use `uv init` then customize `pyproject.toml`
+- Entry point: `supertone_cli.cli:main`
+- Typer app in `cli.py` with `app = typer.Typer()` and `--version` callback
+- All command modules are empty stubs (will be filled in subsequent issues)
+- Follow `src/` layout per architecture doc
+
+#### Tests
+- [ ] Smoke test: import `supertone_cli` succeeds
+- [ ] CLI test: `supertone --help` exits with code 0
+- [ ] CLI test: `supertone --version` prints version string
+
+#### Rollback
+Delete the branch. No persistent state created.
+
+---
+
+### ISSUE-002: Implement error hierarchy and output formatting module
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-009, NFR-005
+- Priority: P0
+- Estimate: 1d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-001
+
+#### Goal
+The `errors.py` and `output.py` modules are fully implemented, providing consistent error handling with exit codes and output formatting (tables, JSON, progress, TTY detection) used by all subsequent commands.
+
+#### Scope (In/Out)
+- In: `errors.py` — `CLIError(exit_code=1)`, `AuthError(exit_code=2)`, `InputError(exit_code=3)`, `APIError(exit_code=1)`; top-level exception handler in `cli.py` that catches `CLIError` subclasses and calls `sys.exit()`; `output.py` — `print_table()`, `print_json()`, `print_error()`, `create_progress()`, `is_pipe()`, `NO_COLOR` support, TTY detection
+- Out: Data models (in data_model), command implementations
+
+#### Acceptance Criteria (DoD)
+- [ ] Given an `AuthError` is raised, when the top-level handler catches it, then exit code is 2 and the error message is printed to stderr in the format `Error: <cause>. <fix>.`
+- [ ] Given an `InputError` is raised, when caught, then exit code is 3
+- [ ] Given an `APIError` is raised, when caught, then exit code is 1
+- [ ] Given an unhandled exception reaches the top-level handler, then exit code is 1 and the API key (if present in the exception message) is stripped from the output
+- [ ] Given stdout is not a TTY, when `is_pipe()` is called, then it returns `True`
+- [ ] Given `NO_COLOR` env var is set, when output functions are called, then ANSI color codes are not emitted
+- [ ] Given `print_json(data)` is called, when data is a dict or list, then valid JSON is written to stdout with no extra formatting
+- [ ] Given `print_table(headers, rows)` is called, then a Rich table is rendered to stderr
+
+#### Implementation Notes
+- `errors.py`: Define exception hierarchy per architecture doc. Add a `sanitize_message(msg, api_key)` function that strips the API key from any string.
+- `output.py`: Use `rich.console.Console(stderr=True)` for human output. `is_pipe()` checks `sys.stdout.isatty()`. `print_json` uses `json.dumps(data, indent=2, ensure_ascii=False)`.
+- Top-level handler in `cli.py`: wrap `app()` call in try/except for `CLIError`, `KeyboardInterrupt`, `BrokenPipeError`.
+
+#### Tests
+- [ ] Unit: `CLIError`, `AuthError`, `InputError`, `APIError` have correct `exit_code` attributes
+- [ ] Unit: `sanitize_message("key is sk-abc123", "sk-abc123")` returns `"key is ***"`
+- [ ] Unit: `print_json({"a": 1})` writes valid JSON to stdout
+- [ ] Unit: `is_pipe()` returns correct value (mock `sys.stdout.isatty`)
+- [ ] Integration: subprocess test raising `AuthError` exits with code 2
+- [ ] Integration: subprocess test with unhandled exception exits with code 1
+
+#### Rollback
+Revert the branch. No persistent state.
+
+---
+
+### ISSUE-003: Implement config module and config commands (init/set/get/list)
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-008, NFR-003, US-13, US-14
+- Priority: P0
+- Estimate: 1.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-002
+
+#### Goal
+The `config.py` module reads/writes `~/.config/supertone/config.toml` with 600 permissions, resolves env var overrides, and the `config` command group (init/set/get/list) is fully functional.
+
+#### Scope (In/Out)
+- In: `config.py` — `load_config()`, `save_config()`, `get_api_key()`, `get_default()`, `CONFIG_PATH`, `VALID_CONFIG_KEYS`; `commands/config_cmd.py` — `init`, `set_value`, `get_value`, `list_values` subcommands; config file creation with `0o600` permissions; env var `SUPERTONE_API_KEY` override; interactive `config init` prompt; key validation (reject unknown keys, reject empty `api_key`)
+- Out: Other command implementations, masking in `config list` (stretch)
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `supertone config set api_key sk-test123`, when the command completes, then `~/.config/supertone/config.toml` contains `api_key = "sk-test123"` and file permissions are `0o600`
+- [ ] Given `supertone config set foo bar`, when the command runs, then exit code is 3 with message listing valid keys
+- [ ] Given `supertone config set api_key ""`, when the command runs, then exit code is 3 with a non-empty-required message
+- [ ] Given `supertone config get default_voice` and the key is set, then the value is printed to stdout
+- [ ] Given `supertone config get default_voice` and the key is not set, then exit code is 3
+- [ ] Given `supertone config list`, then all key-value pairs are printed; `api_key` is masked in list output
+- [ ] Given config file does not exist, when `config list` runs, then empty output with exit code 0
+- [ ] Given `SUPERTONE_API_KEY=sk-env` is set, when `get_api_key()` is called, then `sk-env` is returned regardless of config file content
+- [ ] Given `supertone config init` in a TTY, when user enters values, then config file is written with all provided values and permissions are `0o600`
+- [ ] Given `supertone config init` with stdin piped (not TTY), then exit code is 3 with message to use `config set` instead
+
+#### Implementation Notes
+- `config.py`: Use `tomllib.load()` for reading, `tomli_w.dump()` for writing. `Path.chmod(0o600)` after every write. Create parent dir with `mkdir(parents=True, exist_ok=True)`.
+- `commands/config_cmd.py`: Register as `config_app = typer.Typer()` added to main app. `config init` uses `typer.prompt()` or `rich.prompt.Prompt`.
+- Resolution order: CLI flags > env vars > config file > defaults. `get_api_key()` checks `os.environ.get("SUPERTONE_API_KEY")` first.
+- Valid keys: `VALID_CONFIG_KEYS = {"api_key", "default_voice", "default_model", "default_lang"}`
+
+#### Tests
+- [ ] Unit: `save_config({"api_key": "test"})` creates TOML file with correct content and `0o600` permissions
+- [ ] Unit: `load_config()` returns dict from existing TOML file
+- [ ] Unit: `load_config()` returns empty dict when file does not exist
+- [ ] Unit: `get_api_key()` returns env var value when set (mock `os.environ`)
+- [ ] Unit: `get_api_key()` returns config file value when env var not set
+- [ ] Unit: `get_api_key()` returns `None` when neither is set
+- [ ] CLI test: `config set` + `config get` round-trip
+- [ ] CLI test: `config set` with invalid key exits 3
+- [ ] CLI test: `config list` with no config file exits 0
+
+#### Rollback
+Revert the branch. Delete any test config files created during testing (use tmp dirs in tests).
+
+---
+
+### ISSUE-004: Implement SDK client wrapper module
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: FR-001, FR-003, FR-005, FR-006, FR-007, FR-010
+- Priority: P0
+- Estimate: 1d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-003
+
+#### Goal
+The `client.py` module provides a thin wrapper over the Supertone SDK, is the only module that imports `supertone`, translates SDK exceptions into CLI errors, and exposes all 7 SDK operations as typed functions.
+
+#### Scope (In/Out)
+- In: `client.py` — `get_client()` lazy singleton, `create_speech()`, `stream_speech()`, `predict_duration()`, `list_voices()`, `search_voices()`, `clone_voice()`, `get_usage()`; SDK exception translation to `AuthError`/`APIError`; data models (`Voice`, `Usage`, `Prediction`, `CloneResult`, `TTSResult`, `BatchResult`, `BatchError`) in `models.py` or `client.py`
+- Out: Command implementations that call these functions, actual API calls (all tests use mocks)
+
+#### Acceptance Criteria (DoD)
+- [ ] Given a valid API key in config, when `get_client()` is called, then a Supertone SDK client instance is returned (lazy, singleton per process)
+- [ ] Given no API key, when `get_client()` is called, then `AuthError` is raised with exit code 2 and a message instructing the user to set the key
+- [ ] Given `create_speech(text, voice, model, lang)` is called, when the SDK returns audio bytes, then raw bytes are returned
+- [ ] Given `create_speech()` is called and the SDK raises an auth error, then `AuthError` is raised
+- [ ] Given `create_speech()` is called and the SDK raises a network/server error, then `APIError` is raised
+- [ ] Given `list_voices()` is called, then a list of `Voice` dataclass instances is returned
+- [ ] Given data models are defined, then `Voice`, `Usage`, `Prediction`, `CloneResult`, `TTSResult`, `BatchResult`, `BatchError` are importable from the models module
+
+#### Implementation Notes
+- `client.py` is the ONLY module that `import supertone`. Use lazy import inside functions, not at module level (NFR-002 startup latency).
+- SDK exception mapping: inspect the SDK's exception hierarchy. Common pattern: `supertone.AuthenticationError` -> `AuthError`, `supertone.APIError` -> `APIError`.
+- Data models: frozen dataclasses as specified in `docs/data_model.md`. Place in `src/supertone_cli/models.py`.
+- `get_client()` uses a module-level `_client` variable for singleton.
+
+#### Tests
+- [ ] Unit: `get_client()` with mocked config returning an API key creates client (mock SDK constructor)
+- [ ] Unit: `get_client()` with no API key raises `AuthError`
+- [ ] Unit: `create_speech()` returns bytes when SDK succeeds (mock SDK)
+- [ ] Unit: `create_speech()` raises `AuthError` when SDK auth fails (mock SDK)
+- [ ] Unit: `create_speech()` raises `APIError` when SDK returns server error (mock SDK)
+- [ ] Unit: `list_voices()` returns list of `Voice` dataclasses (mock SDK)
+- [ ] Unit: `predict_duration()` returns `Prediction` dataclass (mock SDK)
+- [ ] Unit: `clone_voice()` returns `CloneResult` dataclass (mock SDK)
+- [ ] Unit: `get_usage()` returns `Usage` dataclass (mock SDK)
+- [ ] Unit: Data models are frozen dataclasses with correct fields
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-005: Implement single TTS command (text/file/stdin input, file/stdout output)
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-001, US-1, US-2, US-5, US-6
+- Priority: P0
+- Estimate: 1.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-004
+
+#### Goal
+`supertone tts "text"` generates an audio file from text input (positional arg, `--input` file, or stdin) and writes to a file or stdout, with correct input source disambiguation and output routing.
+
+#### Scope (In/Out)
+- In: `commands/tts.py` — `tts` command with positional TEXT arg, `--input`, `--output`, `--output-format`, `--voice`, `--model`, `--lang`, `--format` (text/json); input source resolution (exactly one of: positional, file, stdin); output routing (file, stdout with `--output -`, default `output.<format>`); spinner on stderr during generation (TTY only); success message on stderr; `--format json` metadata output; register tts command group in `cli.py`
+- Out: Batch processing, parameter validation beyond basic, streaming, predict subcommand
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `supertone tts "Hello" --voice v1`, when the API returns audio, then `output.wav` is created in the current directory and exit code is 0
+- [ ] Given `supertone tts "Hello" --voice v1 --output hello.wav`, then `hello.wav` is created
+- [ ] Given `supertone tts "Hello" --voice v1 --output-format mp3`, then `output.mp3` is created
+- [ ] Given `supertone tts --input script.txt --voice v1`, when `script.txt` exists and is non-empty, then its contents are sent to the API
+- [ ] Given `supertone tts --input script.txt` and the file does not exist, then exit code is 3
+- [ ] Given `supertone tts --input script.txt` and the file is empty, then exit code is 3
+- [ ] Given `echo "Hello" | supertone tts --voice v1`, then piped stdin text is used as input
+- [ ] Given both positional text and `--input` are provided, then exit code is 3 with ambiguous input message
+- [ ] Given `supertone tts "Hello" --voice v1 --output -`, then audio bytes are written to stdout and nothing else goes to stdout
+- [ ] Given no `--voice` and no `default_voice` in config, then exit code is 3 with instructive message
+- [ ] Given `--format json` and `--output hello.wav`, then JSON metadata with `output_file`, `duration_seconds`, `voice_id` is printed to stdout
+- [ ] Given `--format json` and `--output -`, then exit code is 3 (both write to stdout)
+
+#### Implementation Notes
+- Input resolution: check `text` arg, `--input` path, `sys.stdin.isatty()`. Exactly one must be active.
+- Default output: `output.<output_format>` in cwd.
+- `--output -`: write to `sys.stdout.buffer`.
+- Use `client.create_speech()` from ISSUE-004.
+- Spinner: `output.create_progress()` on stderr if `sys.stderr.isatty()`.
+- `--format json`: use `output.print_json()` with TTSResult fields.
+
+#### Tests
+- [ ] Unit: input resolution selects positional text correctly
+- [ ] Unit: input resolution selects file input correctly
+- [ ] Unit: input resolution detects ambiguous input (multiple sources)
+- [ ] Unit: input resolution reads stdin when not TTY
+- [ ] Unit: output routing writes to specified file path
+- [ ] Unit: output routing writes to stdout buffer when `--output -`
+- [ ] Unit: missing voice with no default raises `InputError`
+- [ ] CLI test: `supertone tts "Hello" --voice v1` creates output file (mock SDK)
+- [ ] CLI test: `supertone tts --input <tmpfile> --voice v1` reads file (mock SDK)
+- [ ] CLI test: ambiguous input exits with code 3
+- [ ] CLI test: `--format json` outputs valid JSON to stdout
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-006: Implement TTS voice and audio parameter flags with model validation
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-002, US-3
+- Priority: P1
+- Estimate: 1d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-005
+
+#### Goal
+All SDK audio parameters (`--speed`, `--pitch`, `--pitch-variance`, `--similarity`, `--text-guidance`, `--style`, `--include-phonemes`) are exposed as CLI flags on `supertone tts`, and model-parameter compatibility is validated before any API call.
+
+#### Scope (In/Out)
+- In: Add all parameter flags to `commands/tts.py`; model-parameter validation matrix (e.g., `--similarity` not allowed on `sona_speech_2_flash`, `--stream` only on `sona_speech_1`); pass validated params to `client.create_speech()`; `--model` enum validation
+- Out: Streaming playback implementation (just the validation that `--stream` requires `sona_speech_1`), batch processing
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `--model sona_speech_2_flash --similarity 0.8`, when the command runs, then exit code is 3 with message that `--similarity` is not supported by `sona_speech_2_flash`
+- [ ] Given `--model sona_speech_2_flash --text-guidance 0.5`, then exit code is 3 with similar message
+- [ ] Given `--stream` with `--model sona_speech_2`, then exit code is 3 with message that streaming requires `sona_speech_1`
+- [ ] Given `--model invalid_model`, then exit code is 3 listing valid models
+- [ ] Given `--speed 1.2 --pitch 0.5 --voice v1 "Hello"`, then both parameters are passed to `client.create_speech()`
+- [ ] Given `--style calm --voice v1 "Hello"`, then the style parameter is passed to the API
+- [ ] Given `--output-format flac --voice v1 "Hello"`, then the API receives flac format and output file has `.flac` extension
+
+#### Implementation Notes
+- Define a validation function `validate_params(model, **kwargs)` that checks the compatibility matrix.
+- Model enum: `VALID_MODELS = {"sona_speech_1", "supertonic_api_1", "sona_speech_2", "sona_speech_2_flash"}`
+- `sona_speech_2_flash` disallows: `similarity`, `text_guidance`
+- `supertonic_api_1` only supports: `speed` (reject others with exit 3, per Assumption A-4)
+- `--stream` only with `sona_speech_1`
+
+#### Tests
+- [ ] Unit: `validate_params("sona_speech_2_flash", similarity=0.8)` raises `InputError`
+- [ ] Unit: `validate_params("sona_speech_2_flash", text_guidance=0.5)` raises `InputError`
+- [ ] Unit: `validate_params("sona_speech_1", stream=True)` passes
+- [ ] Unit: `validate_params("sona_speech_2", stream=True)` raises `InputError`
+- [ ] Unit: `validate_params("supertonic_api_1", pitch=0.5)` raises `InputError`
+- [ ] Unit: `validate_params("sona_speech_2", speed=1.2, pitch=0.5)` passes
+- [ ] CLI test: invalid model name exits with code 3
+- [ ] CLI test: valid params are forwarded to client (mock SDK)
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-007: Implement batch TTS processing (directory/glob input, progress bar)
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-004, US-7
+- Priority: P1
+- Estimate: 1.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-006
+
+#### Goal
+`supertone tts --input ./scripts/ --outdir ./audio/` processes all matching text files, shows a progress bar on TTY, handles per-file errors, and prints a summary.
+
+#### Scope (In/Out)
+- In: Batch mode detection in `commands/tts.py` (when `--input` is a directory or glob and `--outdir` is provided); file collection (top-level `.txt` for directories, glob expansion for patterns); sequential processing loop; Rich progress bar on stderr (TTY only); per-file error handling (log to stderr, continue); `--fail-fast` flag; summary line on stderr; exit code 1 if any file failed; `--outdir` creation if missing
+- Out: Recursive directory traversal, concurrent processing
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `--input ./scripts/ --outdir ./audio/ --voice v1`, when `./scripts/` contains `a.txt` and `b.txt`, then `./audio/a.wav` and `./audio/b.wav` are created
+- [ ] Given `--input "scripts/*.txt" --outdir ./audio/ --voice v1`, then all matching files are processed
+- [ ] Given `--outdir ./audio/` does not exist, then it is created before processing
+- [ ] Given one file fails during batch, when `--fail-fast` is not set, then remaining files are processed and summary shows `N succeeded, M failed`
+- [ ] Given `--fail-fast` and a file fails, then processing stops immediately and exit code is 1
+- [ ] Given batch completes with all files succeeding, then exit code is 0
+- [ ] Given batch completes with any failure, then exit code is 1
+- [ ] Given stdout is a TTY, then a progress bar `X/N files` is displayed on stderr
+- [ ] Given stdout is not a TTY, then the progress bar is suppressed
+- [ ] Given `--input ./scripts/` and no `.txt` files exist, then exit code is 3 with descriptive message
+- [ ] Given `--input "*.xyz"` matches no files, then exit code is 3
+
+#### Implementation Notes
+- Batch detection: if `--input` is a directory (`Path.is_dir()`) or contains glob chars (`*`, `?`), and `--outdir` is set.
+- File collection: `Path.glob("*.txt")` for directories, `glob.glob()` for patterns.
+- Output filename: `stem + "." + output_format` placed in `--outdir`.
+- Progress: `output.create_progress()` wrapping the file loop.
+- Use `BatchResult` and `BatchError` models from ISSUE-004.
+
+#### Tests
+- [ ] Unit: file collection from directory returns `.txt` files only
+- [ ] Unit: file collection from glob pattern returns matching files
+- [ ] Unit: empty directory raises `InputError`
+- [ ] Unit: non-matching glob raises `InputError`
+- [ ] Unit: `--outdir` is created if missing
+- [ ] Unit: per-file error is captured and processing continues
+- [ ] Unit: `--fail-fast` stops on first error
+- [ ] CLI test: batch with 2 files creates 2 output files (mock SDK)
+- [ ] CLI test: batch with 1 failure and `--fail-fast` exits 1 after first failure
+- [ ] CLI test: summary line format matches `N succeeded, M failed`
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-008: Implement voices list command
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-005, US-9, US-12
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-004
+
+#### Goal
+`supertone voices list` displays available voices in a table (or JSON), with optional `--type` filter for preset/custom.
+
+#### Scope (In/Out)
+- In: `commands/voices.py` — `list_voices` subcommand; `--type` filter (preset/custom); `--format` (text/json); table rendering via `output.print_table()`; JSON output via `output.print_json()`; empty result handling; register voices command group in `cli.py`
+- Out: Search and clone subcommands
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `supertone voices list`, when the API returns voices, then a table with Name, ID, Type, Languages columns is printed to stdout
+- [ ] Given `--type preset`, then only preset voices are displayed
+- [ ] Given `--type custom`, then only custom voices are displayed
+- [ ] Given `--format json`, then a valid JSON array is printed to stdout with `name`, `id`, `type`, `languages` fields per object
+- [ ] Given the API returns zero voices, then an empty table (with headers) or `[]` JSON is returned and exit code is 0
+- [ ] Given `--type custom` with no custom voices, then a hint message is printed to stderr
+
+#### Implementation Notes
+- `commands/voices.py`: Create `voices_app = typer.Typer()`, add to main app in `cli.py`.
+- `list_voices()`: call `client.list_voices()`, filter by `--type` if provided, render via `output.print_table()` or `output.print_json()`.
+- Table columns: Name, ID, Type, Languages (join list with ", ").
+
+#### Tests
+- [ ] Unit: list command renders table with correct columns (mock client)
+- [ ] Unit: `--type preset` filters correctly
+- [ ] Unit: `--type custom` filters correctly
+- [ ] Unit: `--format json` produces valid JSON array
+- [ ] Unit: empty voice list returns empty table/array with exit code 0
+- [ ] CLI test: `supertone voices list` exits 0 with table output (mock SDK)
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-009: Implement voices search command
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-006, US-10
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-008
+
+#### Goal
+`supertone voices search` filters voices by language, gender, age, use case, and keyword, displaying results in the same table format as `voices list`.
+
+#### Scope (In/Out)
+- In: `commands/voices.py` — `search_voices` subcommand; `--lang`, `--gender`, `--age`, `--use-case`, `--query` flags; AND logic for multiple filters; `--format` (text/json); at-least-one-filter validation; empty result hint on stderr
+- Out: Client-side filtering (assumes SDK/API handles filtering)
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `--lang ko`, then only voices supporting Korean are returned
+- [ ] Given `--gender female --lang ko`, then only voices matching both filters are returned
+- [ ] Given `--query "bright"`, then voices matching the keyword are returned
+- [ ] Given no filters provided, then exit code is 3 with message requiring at least one filter
+- [ ] Given `--format json`, then a valid JSON array is printed
+- [ ] Given no results match, then empty table is printed and a hint is shown on stderr, exit code is 0
+
+#### Implementation Notes
+- Call `client.search_voices(**filters)` passing only non-None filter values.
+- If the SDK does not support server-side filtering, apply filters client-side on `list_voices()` result. Document this in code comments.
+- Reuse table rendering from ISSUE-008.
+
+#### Tests
+- [ ] Unit: search with `--lang ko` passes correct filter to client (mock)
+- [ ] Unit: search with multiple filters passes all (mock)
+- [ ] Unit: search with no filters raises `InputError`
+- [ ] Unit: empty result returns exit code 0 with hint
+- [ ] CLI test: `supertone voices search --lang ko` exits 0 (mock SDK)
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-010: Implement TTS predict subcommand
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-003, US-4
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-005
+
+#### Goal
+`supertone tts predict "text"` displays predicted audio duration and estimated credit cost without generating audio or consuming credits.
+
+#### Scope (In/Out)
+- In: `commands/tts.py` — `predict` subcommand; same input resolution as `tts` (positional, `--input`, stdin); `--voice`, `--model`, `--lang` flags; human-readable output (`Duration: 3.2s | Estimated credits: 47`); `--format json` output
+- Out: Audio generation, credit deduction
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `supertone tts predict "Hello" --voice v1`, then duration and credit estimate are printed to stdout in human-readable format
+- [ ] Given `--input script.txt`, then file contents are used for prediction
+- [ ] Given `--format json`, then output is `{"duration_seconds": ..., "estimated_credits": ...}` on stdout
+- [ ] Given no audio file is created by this command
+- [ ] Given the same input errors as `tts` (missing text, file not found) produce the same exit codes
+
+#### Implementation Notes
+- Reuse input resolution logic from the `tts` command (extract to a shared helper).
+- Call `client.predict_duration()`.
+- Human-readable format: `Duration: {d}s | Estimated credits: {c}`
+
+#### Tests
+- [ ] Unit: predict returns correct human-readable format (mock client)
+- [ ] Unit: predict `--format json` returns valid JSON (mock client)
+- [ ] Unit: predict with file input works (mock client)
+- [ ] CLI test: `supertone tts predict "Hello" --voice v1` exits 0 (mock SDK)
+- [ ] CLI test: predict does not create any files
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-011: Implement voices clone command
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-007, US-11
+- Priority: P1
+- Estimate: 1d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-004
+
+#### Goal
+`supertone voices clone --name "my-narrator" --sample ./sample.wav` uploads an audio sample and returns the new voice ID.
+
+#### Scope (In/Out)
+- In: `commands/voices.py` — `clone_voice` subcommand; `--name` (required), `--sample` (required) flags; pre-upload file existence and format validation; upload progress indicator on stderr; voice_id printed to stdout; `--format json` output; supported format check
+- Out: Actual API calls (tests use mocks)
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `--name "my-narrator" --sample ./sample.wav`, when upload succeeds, then `voice_id` is printed to stdout and exit code is 0
+- [ ] Given `--format json`, then `{"voice_id": "...", "name": "my-narrator"}` is printed to stdout
+- [ ] Given `--sample ./missing.wav` (file does not exist), then exit code is 3
+- [ ] Given `--sample ./sample.aac` (unsupported format), then exit code is 3 with message listing supported formats
+- [ ] Given upload fails (API error), then exit code is 1 with error on stderr
+- [ ] Given success, then a helpful stderr message shows how to use the new voice
+
+#### Implementation Notes
+- Supported formats: derive from SDK docs; default assumption `{wav, mp3, ogg, flac}` per UX spec.
+- File extension check before upload: `Path(sample).suffix.lower()`.
+- Call `client.clone_voice(name, sample_path)`.
+- Print `voice_id` to stdout (for script capture), helpful message to stderr.
+
+#### Tests
+- [ ] Unit: clone with valid file calls client and prints voice_id (mock)
+- [ ] Unit: clone with missing file raises `InputError`
+- [ ] Unit: clone with unsupported format raises `InputError` with supported list
+- [ ] Unit: `--format json` produces valid JSON
+- [ ] CLI test: `supertone voices clone --name test --sample <tmpfile>` exits 0 (mock SDK)
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-012: Implement usage command
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-010, US-15
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-004
+
+#### Goal
+`supertone usage` displays API usage (used credits, remaining credits, plan name) in human-readable or JSON format.
+
+#### Scope (In/Out)
+- In: `commands/usage.py` — `usage` command; human-readable output with Plan/Used/Remaining labels; `--format json` output; register in `cli.py`
+- Out: Historical usage data, usage alerts
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `supertone usage`, when the API returns usage data, then Plan, Used, and Remaining are displayed in human-readable format on stdout
+- [ ] Given `--format json`, then `{"plan": "...", "used": N, "remaining": N}` is printed to stdout
+- [ ] Given the API call fails, then exit code is 1 with error on stderr
+- [ ] Given auth failure, then exit code is 2
+
+#### Implementation Notes
+- Call `client.get_usage()`, format via `output.py`.
+- Human-readable format per UX spec: `Plan:`, `Used:`, `Remaining:` with aligned labels.
+
+#### Tests
+- [ ] Unit: usage command renders correct human-readable format (mock client)
+- [ ] Unit: `--format json` produces valid JSON (mock client)
+- [ ] Unit: API error results in exit code 1
+- [ ] CLI test: `supertone usage` exits 0 (mock SDK)
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-013: Implement streaming TTS playback
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-002 (streaming), US-3 (streaming)
+- Priority: P2
+- Estimate: 1d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-006
+
+#### Goal
+`supertone tts "text" --stream --model sona_speech_1` plays audio in real time via the system audio device, optionally saving to a file simultaneously.
+
+#### Scope (In/Out)
+- In: `commands/tts.py` — streaming path when `--stream` is set; `sounddevice` optional import with graceful error if not installed; real-time audio playback from `client.stream_speech()` iterator; simultaneous file save when `--output <file>` is also provided; stderr message `Streamed: X.Xs` on completion
+- Out: Streaming to stdout (undefined behavior), non-`sona_speech_1` models (blocked by ISSUE-006 validation)
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `--stream --model sona_speech_1 --voice v1 "Hello"`, when audio chunks arrive, then audio is played to the system output device
+- [ ] Given `--stream --output file.wav --model sona_speech_1 --voice v1 "Hello"`, then audio is played AND saved to `file.wav`
+- [ ] Given `--stream` and `sounddevice` is not installed, then exit code is 3 with message `pip install supertone-cli[stream]`
+- [ ] Given audio device is unavailable, then exit code is 1 with descriptive error
+- [ ] Given streaming completes, then stderr shows `Streamed: X.Xs`
+
+#### Implementation Notes
+- `sounddevice` import guarded by try/except `ImportError`.
+- Use `sounddevice.OutputStream` to play chunks as they arrive from `client.stream_speech()`.
+- If `--output` is set, tee bytes to both the audio device and a file handle.
+- This is a "Could" priority in the PRD — P2 issue.
+
+#### Tests
+- [ ] Unit: streaming path calls `client.stream_speech()` (mock)
+- [ ] Unit: missing `sounddevice` raises `InputError` with install message (mock ImportError)
+- [ ] Unit: audio device error raises `CLIError` (mock sounddevice)
+- [ ] Unit: simultaneous file save writes all chunks to file (mock)
+- [ ] CLI test: `--stream` without sounddevice installed exits 3
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-014: Optimize startup latency with lazy imports and add CI benchmark
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-002
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-005
+
+#### Goal
+`supertone --help` completes in under 500ms, verified by an automated benchmark test.
+
+#### Scope (In/Out)
+- In: Audit and fix all imports in `cli.py` to ensure command modules, SDK, and Rich are lazy-loaded; add a pytest benchmark test that measures `supertone --help` wall-clock time; ensure `supertone` SDK is only imported inside `client.py` function bodies
+- Out: General performance optimization of API calls
+
+#### Acceptance Criteria (DoD)
+- [ ] Given all dependencies are installed, when `time supertone --help` is run 10 times, then the median wall-clock time is < 500ms
+- [ ] Given `cli.py`, when inspected, then no command module is imported at module level (all are lazy via Typer callback pattern or deferred import)
+- [ ] Given `client.py`, when inspected, then `import supertone` appears only inside function bodies, not at module level
+- [ ] Given a benchmark test exists, when `uv run pytest tests/test_startup.py` is run, then the test asserts startup time < 500ms
+
+#### Implementation Notes
+- In `cli.py`, use Typer's lazy group loading. Register command groups with callbacks, import command modules inside the callback.
+- Check that `rich` is not imported at module level in `cli.py`.
+- Benchmark test: use `subprocess.run(["supertone", "--help"])` and measure `time.perf_counter()` delta.
+
+#### Tests
+- [ ] Benchmark: `supertone --help` subprocess completes in < 500ms (10-run median)
+- [ ] Static: grep `cli.py` for module-level imports of `commands`, `supertone`, `rich` — assert none
+
+#### Rollback
+Revert the branch.
+
+---
+
+### ISSUE-015: Set up CI pipeline (GitHub Actions)
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-004
+- Priority: P1
+- Estimate: 0.5d
+- Status: backlog
+- Owner:
+- Branch:
+- GH-Issue:
+- PR:
+- Depends-On: ISSUE-005
+
+#### Goal
+A GitHub Actions CI pipeline runs lint, tests, and coverage checks on every push and PR, enforcing the >80% coverage target.
+
+#### Scope (In/Out)
+- In: `.github/workflows/ci.yml` — matrix (Python 3.11, 3.12, 3.13 on ubuntu-latest and macos-latest); steps: `uv sync`, `uv run ruff check .`, `uv run pytest --cov=src --cov-report=term-missing`, coverage threshold assertion; startup benchmark step
+- Out: PyPI publish workflow (Phase 1 does not require automated publishing), CD
+
+#### Acceptance Criteria (DoD)
+- [ ] Given a push to `main` or a PR, when CI runs, then all tests pass on Python 3.11, 3.12, 3.13
+- [ ] Given CI runs, when coverage is below 80%, then the pipeline fails
+- [ ] Given CI runs, when `ruff check .` finds issues, then the pipeline fails
+- [ ] Given CI runs, then `supertone --help` startup benchmark step executes and logs the time
+
+#### Implementation Notes
+- Use `astral-sh/setup-uv` action for uv installation.
+- Coverage enforcement: `uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80`
+- Matrix: `{os: [ubuntu-latest, macos-latest], python: [3.11, 3.12, 3.13]}`
+
+#### Tests
+- [ ] CI workflow YAML is valid (lintable)
+- [ ] CI passes locally with `act` or manual workflow dispatch
+
+#### Rollback
+Delete the workflow file.
+
+---
+
+## Self-Review Summary
+
+### Requirement Coverage
+| Requirement | Issue(s) |
+|-------------|----------|
+| FR-001 (TTS input/output) | ISSUE-005 |
+| FR-002 (voice/audio params) | ISSUE-006 |
+| FR-003 (TTS predict) | ISSUE-010 |
+| FR-004 (batch processing) | ISSUE-007 |
+| FR-005 (voices list) | ISSUE-008 |
+| FR-006 (voices search) | ISSUE-009 |
+| FR-007 (voices clone) | ISSUE-011 |
+| FR-008 (config) | ISSUE-003 |
+| FR-009 (output/error) | ISSUE-002 |
+| FR-010 (usage) | ISSUE-012 |
+| NFR-001 (installability) | ISSUE-001 |
+| NFR-002 (startup latency) | ISSUE-014 |
+| NFR-003 (API key security) | ISSUE-003 |
+| NFR-004 (test coverage) | ISSUE-015 |
+| NFR-005 (exit codes) | ISSUE-002 |
+| US-1 (single TTS) | ISSUE-005 |
+| US-2 (file input) | ISSUE-005 |
+| US-3 (params) | ISSUE-006 |
+| US-3 streaming | ISSUE-013 |
+| US-4 (predict) | ISSUE-010 |
+| US-5 (piped input) | ISSUE-005 |
+| US-6 (stdout output) | ISSUE-005 |
+| US-7 (batch) | ISSUE-007 |
+| US-8 (JSON output) | ISSUE-005, ISSUE-008, ISSUE-009, ISSUE-010, ISSUE-011, ISSUE-012 |
+| US-9 (list voices) | ISSUE-008 |
+| US-10 (search voices) | ISSUE-009 |
+| US-11 (clone voice) | ISSUE-011 |
+| US-12 (preset vs custom) | ISSUE-008 |
+| US-13 (API key setup) | ISSUE-003 |
+| US-14 (default settings) | ISSUE-003 |
+| US-15 (usage) | ISSUE-012 |
+
+**Orphaned requirements**: None.
+
+### Dependency Graph Validation
+- Critical path: 001 -> 002 -> 003 -> 004 -> 005 -> 006 -> 007 (7 steps)
+- No circular dependencies.
+- Parallel tracks after ISSUE-004: voices (008, 009, 011), usage (012), predict (010 after 005).
+
+### Sizing Re-check
+- All issues are 0.5d to 1.5d. No issue exceeds 1.5d.
+- ISSUE-003 (config, 1.5d) and ISSUE-005 (single TTS, 1.5d) are at the upper bound but each is a cohesive unit that cannot be split without creating dependencies between halves.
+- ISSUE-007 (batch, 1.5d) is complex but self-contained.
+
+### AC Testability
+- All AC items use Given/When/Then format.
+- Each can be directly translated to a test case.
+
+### Confidence Rating
+**High**. All FRs, NFRs, and user stories are covered. Architecture is detailed and module boundaries are clear. The only uncertainty is the exact Supertone SDK API surface, mitigated by the client wrapper pattern in ISSUE-004.
+
+### Manual Setup Tasks
+No external service provisioning is needed for implementation. The Supertone API key is a user-provided credential, not a platform provisioning task. All tests use mocked SDK calls. No manual setup issues are required.
