@@ -1,15 +1,14 @@
-# Review Notes — ISSUE-002
+# Review Notes — ISSUE-003
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — Error hierarchy follows architecture doc precisely: CLIError(1) -> AuthError(2), InputError(3), APIError(1).
-- **Severity: Info** — `sanitize_message` correctly handles None/empty api_key edge cases.
-- **Severity: Info** — output.py properly separates human output (stderr) from machine output (stdout).
-- **Severity: Info** — `_no_color()` checks at module init time. This is fine for CLI (single invocation per process).
-- **Severity: Info** — Top-level handler in cli.py catches CLIError, KeyboardInterrupt, BrokenPipeError, and generic Exception.
+- **Severity: Info** — Config file permissions enforced to 0o600 on every write, satisfying NFR-003.
+- **Severity: Info** — VALID_CONFIG_KEYS used for validation in both config.py and config_cmd.py.
+- **Severity: Info** — api_key masked in `config list` output to prevent accidental exposure.
+- **Severity: Info** — `config init` properly checks stdin.isatty() and rejects non-interactive use.
 
 ### Changes Made
 None required.
@@ -21,7 +20,7 @@ None.
 
 **Verdict**: No issues
 
-- `sanitize_message` strips API keys from error messages before output — prevents accidental secret leaks in stack traces.
-- No hardcoded secrets or credentials.
-- No external network calls.
-- No user input injection risk in error formatting (Rich markup is only applied to fixed strings).
+- Config file written with 0o600 permissions (owner-only read/write).
+- API key masked in list output.
+- Environment variable override (SUPERTONE_API_KEY) checked first, never written to disk.
+- No secrets hardcoded or logged.

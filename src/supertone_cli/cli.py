@@ -8,6 +8,7 @@ import sys
 import typer
 
 from supertone_cli import __version__
+from supertone_cli.commands.config_cmd import config_app
 from supertone_cli.errors import CLIError, sanitize_message
 from supertone_cli.output import print_error
 
@@ -16,6 +17,7 @@ app = typer.Typer(
     help="Supertone TTS CLI — generate speech from the terminal.",
     no_args_is_help=True,
 )
+app.add_typer(config_app)
 
 
 def _version_callback(value: bool) -> None:
