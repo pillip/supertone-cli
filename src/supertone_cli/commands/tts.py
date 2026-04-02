@@ -201,3 +201,57 @@ def register_tts_command(app: typer.Typer) -> None:
             lang,
             format,
         )
+
+
+def register_predict_command(app: typer.Typer) -> None:
+    """Register TTS predict command on the main app."""
+    from dataclasses import asdict
+
+    @app.command("tts-predict")
+    def predict_cmd(
+        text: Optional[str] = typer.Argument(
+            None, help="Text to predict duration for."
+        ),
+        input: Optional[str] = typer.Option(
+            None, "--input", "-i", help="Path to text file."
+        ),
+        voice: Optional[str] = typer.Option(None, "--voice", "-v", help="Voice ID."),
+        model: Optional[str] = typer.Option(None, "--model", "-m", help="TTS model."),
+        lang: Optional[str] = typer.Option(None, "--lang", "-l", help="Language code."),
+        format: str = typer.Option(
+            "text",
+            "--format",
+            "-f",
+            help="Output format: text or json.",
+        ),
+    ) -> None:
+        """Predict audio duration without generating."""
+        import supertone_cli.client as _client
+
+        resolved_voice = voice or get_default("default_voice")
+        if not resolved_voice:
+            raise InputError(
+                "No voice specified. Use --voice <id> or "
+                "set a default: supertone config set default_voice <id>"
+            )
+
+        resolved_model = model or get_default("default_model") or "sona_speech_2"
+        resolved_lang = lang or get_default("default_lang") or "ko"
+
+        resolved_text = _resolve_text(text, input)
+
+        prediction = _client.predict_duration(
+            resolved_text,
+            resolved_voice,
+            resolved_model,
+            resolved_lang,
+        )
+
+        if format == "json":
+            print_json(asdict(prediction))
+            return
+
+        typer.echo(
+            f"Duration: {prediction.duration_seconds}s | "
+            f"Estimated credits: {prediction.estimated_credits}"
+        )
