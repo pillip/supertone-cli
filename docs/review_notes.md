@@ -1,11 +1,11 @@
-# Review Notes — ISSUE-012
+# Review Notes — ISSUE-006
 
 ## Code Review
 
 **Verdict**: Approved
 
 ### Findings
-- **Severity: Info** — Simple, clean implementation.
+- **Severity: Info** — Validation matrix cleanly separates model constraints.
 
 ### Changes Made
 None.
