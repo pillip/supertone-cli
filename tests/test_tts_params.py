@@ -44,3 +44,16 @@ def test_valid_model_no_params():
     validate_params("sona_speech_1")
     validate_params("sona_speech_2_flash")
     validate_params("supertonic_api_1")
+    validate_params("sona_speech_2t")
+
+
+def test_sona2t_allows_full_params():
+    """sona_speech_2t is a full-featured model — all voice settings allowed."""
+    validate_params(
+        "sona_speech_2t",
+        speed=1.0,
+        pitch_shift=0.5,
+        pitch_variance=0.8,
+        similarity=0.9,
+        text_guidance=0.7,
+    )

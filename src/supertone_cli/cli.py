@@ -25,14 +25,14 @@ def _register_commands() -> None:
         register_predict_command,
         register_tts_command,
     )
-    from supertone_cli.commands.usage import register_usage_command
+    from supertone_cli.commands.usage import usage_app
     from supertone_cli.commands.voices import voices_app
 
     app.add_typer(config_app)
     app.add_typer(voices_app)
+    app.add_typer(usage_app)
     register_tts_command(app)
     register_predict_command(app)
-    register_usage_command(app)
 
 
 _register_commands()

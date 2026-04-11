@@ -1,4 +1,4 @@
-"""Voices commands: list, search, clone."""
+"""Voices commands: list, search, clone, get, edit, delete."""
 
 from __future__ import annotations
 
@@ -7,13 +7,20 @@ from typing import Optional
 
 import typer
 
-from supertone_cli.client import list_voices, search_voices
+from supertone_cli.client import (
+    list_custom_voices,
+    list_voices,
+    search_voices,
+)
 from supertone_cli.errors import InputError
 from supertone_cli.output import print_json, print_table
 
-SUPPORTED_AUDIO_FORMATS = {".wav", ".mp3", ".ogg", ".flac"}
+SUPPORTED_AUDIO_FORMATS = {".wav", ".mp3"}
 
-voices_app = typer.Typer(name="voices", help="Voice management commands.")
+voices_app = typer.Typer(
+    name="voices",
+    help="Voice management commands.",
+)
 
 
 def _render_voices(voices: list, format: str) -> None:
@@ -36,7 +43,7 @@ def list_cmd(
         None,
         "--type",
         "-t",
-        help="Filter by voice type: preset or custom.",
+        help="Filter: preset or custom.",
     ),
     format: str = typer.Option(
         "text",
@@ -46,9 +53,12 @@ def list_cmd(
     ),
 ) -> None:
     """List available voices."""
-    voices = list_voices()
-    if type:
-        voices = [v for v in voices if v.type == type]
+    if type == "custom":
+        voices = list_custom_voices()
+    else:
+        voices = list_voices()
+        if type == "preset":
+            voices = [v for v in voices if v.type == "preset"]
     _render_voices(voices, format)
     if type == "custom" and not voices:
         typer.echo(
@@ -100,6 +110,37 @@ def search_cmd(
         )
 
 
+@voices_app.command("get")
+def get_cmd(
+    voice_id: str = typer.Argument(help="Voice ID."),
+    format: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="Output format: text or json.",
+    ),
+) -> None:
+    """Get details of a specific voice."""
+    from supertone_cli.client import get_voice
+
+    voice = get_voice(voice_id)
+
+    if format == "json":
+        print_json(asdict(voice))
+        return
+
+    typer.echo(f"Name:      {voice.name}")
+    typer.echo(f"ID:        {voice.id}")
+    typer.echo(f"Type:      {voice.type}")
+    typer.echo(f"Languages: {', '.join(voice.languages)}")
+    if voice.gender:
+        typer.echo(f"Gender:    {voice.gender}")
+    if voice.age:
+        typer.echo(f"Age:       {voice.age}")
+    if voice.use_cases:
+        typer.echo(f"Use cases: {', '.join(voice.use_cases)}")
+
+
 @voices_app.command("clone")
 def clone_cmd(
     name: str = typer.Option(..., "--name", "-n", help="Name for the cloned voice."),
@@ -139,3 +180,54 @@ def clone_cmd(
         f'Use: supertone tts --voice {result.voice_id} "text"',
         err=True,
     )
+
+
+@voices_app.command("edit")
+def edit_cmd(
+    voice_id: str = typer.Argument(help="Custom voice ID."),
+    name: Optional[str] = typer.Option(None, "--name", "-n", help="New name."),
+    description: Optional[str] = typer.Option(
+        None, "--description", "-d", help="New description."
+    ),
+    format: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="Output format: text or json.",
+    ),
+) -> None:
+    """Edit a custom voice's name or description."""
+    from supertone_cli.client import edit_custom_voice
+
+    if not name and not description:
+        raise InputError("Provide --name or --description to update.")
+
+    result = edit_custom_voice(voice_id, name=name, description=description)
+
+    if format == "json":
+        print_json(asdict(result))
+        return
+
+    typer.echo(f"Updated voice {result.voice_id}.")
+
+
+@voices_app.command("delete")
+def delete_cmd(
+    voice_id: str = typer.Argument(help="Custom voice ID."),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Skip confirmation.",
+    ),
+) -> None:
+    """Delete a custom voice."""
+    from supertone_cli.client import delete_custom_voice
+
+    if not yes:
+        confirm = typer.confirm(f"Delete custom voice {voice_id}?")
+        if not confirm:
+            raise typer.Abort()
+
+    delete_custom_voice(voice_id)
+    typer.echo(f"Deleted voice {voice_id}.")

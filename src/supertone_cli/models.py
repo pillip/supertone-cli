@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -12,7 +12,7 @@ class Voice:
     id: str
     name: str
     type: str  # "preset" or "custom"
-    languages: list[str]
+    languages: list[str] = field(default_factory=list)
     gender: str | None = None
     age: str | None = None
     use_cases: list[str] | None = None
