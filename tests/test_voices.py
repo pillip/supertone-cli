@@ -3,9 +3,10 @@
 import json
 from unittest.mock import patch
 
+from typer.testing import CliRunner
+
 from supertone_cli.cli import app
 from supertone_cli.models import Voice
-from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -52,10 +53,21 @@ def test_voices_list_type_preset():
 
 
 def test_voices_list_type_custom():
-    """--type custom filters to custom voices only."""
+    """--type custom calls list_custom_voices."""
+    custom_voices = [
+        Voice(
+            id="v2",
+            name="Voice2",
+            type="custom",
+            languages=["ko"],
+            gender="female",
+            age="young",
+            use_cases=[],
+        ),
+    ]
     with patch(
-        "supertone_cli.commands.voices.list_voices",
-        return_value=_MOCK_VOICES,
+        "supertone_cli.commands.voices.list_custom_voices",
+        return_value=custom_voices,
     ):
         result = runner.invoke(app, ["voices", "list", "--type", "custom"])
     assert result.exit_code == 0

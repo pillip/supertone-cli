@@ -1,15 +1,38 @@
 [project]
 name = "supertone-cli"
 version = "0.1.0"
-description = "CLI wrapper for the Supertone TTS SDK"
+description = "Command-line interface for the Supertone Text-to-Speech API — generate, stream, batch, and manage voices from the terminal."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "pillip" }]
+authors = [{ name = "pillip youn", email = "pillip@supertone.ai" }]
+keywords = [
+    "tts",
+    "text-to-speech",
+    "supertone",
+    "cli",
+    "speech-synthesis",
+    "voice-cloning",
+    "audio",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "typer>=0.9,<1.0",
     "rich>=13.0",
     "tomli_w>=1.0",
+    "supertone>=0.2,<0.3",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +42,12 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pillip/supertone-cli"
+Repository = "https://github.com/pillip/supertone-cli"
+Issues = "https://github.com/pillip/supertone-cli/issues"
+Changelog = "https://github.com/pillip/supertone-cli/releases"
 
 [project.scripts]
 supertone = "supertone_cli.cli:main"
@@ -30,6 +59,30 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/supertone_cli"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/supertone_cli",
+    "LICENSE",
+    "README.md",
+    "pyproject.toml",
+]
+exclude = [
+    ".claude-kit",
+    ".claude",
+    ".worktrees",
+    ".githooks",
+    "docs",
+    "audio",
+    "scripts",
+    "tests",
+    "issues.md",
+    "STATUS.md",
+    "PRD.md",
+    "*.wav",
+    "*.mp3",
+    ".DS_Store",
+]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra"
@@ -37,7 +90,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]

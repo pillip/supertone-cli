@@ -4,8 +4,9 @@ import os
 import stat
 from unittest.mock import patch
 
-from supertone_cli.cli import app
 from typer.testing import CliRunner
+
+from supertone_cli.cli import app
 
 runner = CliRunner()
 

@@ -2,9 +2,10 @@
 
 from unittest.mock import MagicMock, patch
 
+from typer.testing import CliRunner
+
 from supertone_cli.cli import app
 from supertone_cli.errors import InputError
-from typer.testing import CliRunner
 
 runner = CliRunner()
 
