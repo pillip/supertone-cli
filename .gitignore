@@ -1,10 +1,39 @@
+# Python
 __pycache__/
 *.pyc
-.venv/
+*.pyo
 *.egg-info/
+*.egg
+
+# Build / distribution
 dist/
 build/
+
+# Virtualenvs
+.venv/
+venv/
+
+# Test / coverage
 .coverage
 htmlcov/
 .pytest_cache/
 .ruff_cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Generated audio samples (do not commit)
+*.wav
+*.mp3
+audio/
+
+# Local worktrees / sandboxes
+.worktrees/
+
+# Local Claude Code runtime state
+.claude/run/
+.claude/settings.local.json
+
