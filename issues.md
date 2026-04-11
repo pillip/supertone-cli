@@ -52,11 +52,11 @@ ISSUE-002 (errors + output)
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-001-scaffold
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/1
+- PR: https://github.com/pillip/supertone-cli/pull/2
 - Depends-On: none
 
 #### Goal
@@ -97,11 +97,11 @@ Delete the branch. No persistent state created.
 - PRD-Ref: FR-009, NFR-005
 - Priority: P0
 - Estimate: 1d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-002-errors-output
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/3
+- PR: https://github.com/pillip/supertone-cli/pull/4
 - Depends-On: ISSUE-001
 
 #### Goal
@@ -146,11 +146,11 @@ Revert the branch. No persistent state.
 - PRD-Ref: FR-008, NFR-003, US-13, US-14
 - Priority: P0
 - Estimate: 1.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-003-config
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/5
+- PR: https://github.com/pillip/supertone-cli/pull/6
 - Depends-On: ISSUE-002
 
 #### Goal
@@ -201,11 +201,11 @@ Revert the branch. Delete any test config files created during testing (use tmp 
 - PRD-Ref: FR-001, FR-003, FR-005, FR-006, FR-007, FR-010
 - Priority: P0
 - Estimate: 1d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-004-client
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/7
+- PR: https://github.com/pillip/supertone-cli/pull/8
 - Depends-On: ISSUE-003
 
 #### Goal
@@ -254,11 +254,11 @@ Revert the branch.
 - PRD-Ref: FR-001, US-1, US-2, US-5, US-6
 - Priority: P0
 - Estimate: 1.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-005-tts
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/9
+- PR: https://github.com/pillip/supertone-cli/pull/10
 - Depends-On: ISSUE-004
 
 #### Goal
@@ -315,11 +315,11 @@ Revert the branch.
 - PRD-Ref: FR-002, US-3
 - Priority: P1
 - Estimate: 1d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-006-tts-params
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/15
+- PR: https://github.com/pillip/supertone-cli/pull/16
 - Depends-On: ISSUE-005
 
 #### Goal
@@ -367,11 +367,11 @@ Revert the branch.
 - PRD-Ref: FR-004, US-7
 - Priority: P1
 - Estimate: 1.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-007-batch
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/27
+- PR: https://github.com/pillip/supertone-cli/pull/28
 - Depends-On: ISSUE-006
 
 #### Goal
@@ -425,11 +425,11 @@ Revert the branch.
 - PRD-Ref: FR-005, US-9, US-12
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-008-voices-list
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/11
+- PR: https://github.com/pillip/supertone-cli/pull/12
 - Depends-On: ISSUE-004
 
 #### Goal
@@ -472,11 +472,11 @@ Revert the branch.
 - PRD-Ref: FR-006, US-10
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-009-voices-search
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/17
+- PR: https://github.com/pillip/supertone-cli/pull/20
 - Depends-On: ISSUE-008
 
 #### Goal
@@ -518,11 +518,11 @@ Revert the branch.
 - PRD-Ref: FR-003, US-4
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-010-predict
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/19
+- PR: https://github.com/pillip/supertone-cli/pull/22
 - Depends-On: ISSUE-005
 
 #### Goal
@@ -563,11 +563,11 @@ Revert the branch.
 - PRD-Ref: FR-007, US-11
 - Priority: P1
 - Estimate: 1d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-011-voices-clone
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/18
+- PR: https://github.com/pillip/supertone-cli/pull/21
 - Depends-On: ISSUE-004
 
 #### Goal
@@ -610,11 +610,11 @@ Revert the branch.
 - PRD-Ref: FR-010, US-15
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-012-usage
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/13
+- PR: https://github.com/pillip/supertone-cli/pull/14
 - Depends-On: ISSUE-004
 
 #### Goal
@@ -652,11 +652,11 @@ Revert the branch.
 - PRD-Ref: FR-002 (streaming), US-3 (streaming)
 - Priority: P2
 - Estimate: 1d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-013-streaming
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/29
+- PR: https://github.com/pillip/supertone-cli/pull/30
 - Depends-On: ISSUE-006
 
 #### Goal
@@ -698,11 +698,11 @@ Revert the branch.
 - PRD-Ref: NFR-002
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-014-lazy-imports
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/23
+- PR: https://github.com/pillip/supertone-cli/pull/24
 - Depends-On: ISSUE-005
 
 #### Goal
@@ -739,11 +739,11 @@ Revert the branch.
 - PRD-Ref: NFR-004
 - Priority: P1
 - Estimate: 0.5d
-- Status: backlog
+- Status: done
 - Owner:
-- Branch:
-- GH-Issue:
-- PR:
+- Branch: issue/ISSUE-015-ci
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/25
+- PR: https://github.com/pillip/supertone-cli/pull/26
 - Depends-On: ISSUE-005
 
 #### Goal
@@ -770,6 +770,241 @@ A GitHub Actions CI pipeline runs lint, tests, and coverage checks on every push
 
 #### Rollback
 Delete the workflow file.
+
+---
+
+### ISSUE-016: Declare supertone SDK as a required dependency in pyproject.toml
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-016-declare-sdk-dependency
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`pip install supertone-cli` in a clean environment results in a working CLI. Currently `src/supertone_cli/client.py` imports `from supertone import Supertone` but `pyproject.toml` does not list `supertone` in `[project].dependencies`. A fresh install will crash with `ImportError` on the first command.
+
+#### Scope (In/Out)
+- In: Add `"supertone>=0.2,<0.3"` to `[project].dependencies` in `pyproject.toml`; run `uv sync` to regenerate `uv.lock` with `supertone` locked; verify `uv run supertone --help` works in the project venv (not system Python); add an optional `# SDK version` comment if helpful
+- Out: SDK-side changes; major-version upgrades beyond 0.2.x
+
+#### Acceptance Criteria (DoD)
+- [ ] Given a fresh checkout, when `uv sync` is run, then `supertone` 0.2.x appears in `uv.lock` and in the installed packages of the project venv
+- [ ] Given a fresh virtualenv and `pip install .`, when `supertone --help` is executed, then it exits 0 without `ImportError`
+- [ ] Given `pyproject.toml`, when inspected, then `[project].dependencies` contains an entry for `supertone` with a version constraint of `>=0.2,<0.3`
+- [ ] Given the existing test suite, when `uv run pytest -q` is run, then all tests still pass
+
+#### Implementation Notes
+- Current installed SDK version: 0.2.0. Use range `>=0.2,<0.3` to guard against breaking 0.3.x changes while allowing minor patches.
+- File to edit: `pyproject.toml` `[project].dependencies` array.
+- The `# type: ignore[import-untyped]` comment at `src/supertone_cli/client.py:51` may be removable if the SDK ships a `py.typed` marker — check and remove if redundant, otherwise leave it.
+- Do NOT move this dep into an optional extra; the CLI is non-functional without it.
+- After editing `pyproject.toml`, run `uv sync` and commit the updated `uv.lock`.
+
+#### Tests
+- [ ] Existing test suite (`uv run pytest -q`) still passes after the dependency is declared
+- [ ] Regression smoke: `python -c "import supertone_cli.client"` succeeds in a fresh venv created from `pip install .`
+
+#### Rollback
+Revert the `pyproject.toml` change and run `uv sync` to restore the previous `uv.lock`.
+
+---
+
+### ISSUE-017: Rewrite README with installation, auth, and usage examples
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 1d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-017-readme-rewrite
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+A public user landing on the PyPI page or GitHub repo has enough information to install, authenticate, and run a first successful TTS request within ~2 minutes. The current `README.md` is 4 lines and omits every essential section.
+
+#### Scope (In/Out)
+- In: Rewrite `README.md` to include: short tagline; feature bullets (tts / voices / usage / config / streaming / batch); installation (`pip install supertone-cli` + optional `[stream]` extra); authentication (`SUPERTONE_API_KEY` env var OR `supertone config set api_key <key>`); quickstart examples for `supertone tts`, `supertone voices list/search`, `supertone tts-predict`, `supertone usage balance`, piping (stdin/stdout/output redirection), batch mode, streaming mode; exit codes table (0 success, 1 general/API, 2 auth, 3 input); link to CHANGELOG and LICENSE; CI badge
+- Out: Full API reference (users can run `--help`); contributor guide; architecture deep-dive
+
+#### Acceptance Criteria (DoD)
+- [ ] Given a new user reads `README.md`, when they follow the Installation section verbatim, then they end up with a working `supertone --help` command without needing any additional steps
+- [ ] Given `README.md`, when inspected, then it contains all of the following sections: Features, Installation, Authentication, Quickstart, Examples, Exit Codes, License
+- [ ] Given the Quickstart section, when each `supertone tts` command snippet is cross-referenced with `src/supertone_cli/commands/tts.py`, then all flags used in the snippet are valid flags on the current CLI
+- [ ] Given the Exit Codes section, when compared with `src/supertone_cli/errors.py`, then codes 0, 1, 2, and 3 are documented and match the implementation
+
+#### Implementation Notes
+- Write in English (primary) for PyPI discoverability. Korean translation is out of scope.
+- Reference env var override precedence: CLI flags > env vars > config file > defaults (matches `src/supertone_cli/config.py` behavior).
+- Verify every example by cross-referencing `src/supertone_cli/commands/tts.py`, `src/supertone_cli/commands/voices.py`, `src/supertone_cli/commands/usage.py` — do not document flags that do not exist.
+- If the README exceeds ~250 lines, move deep examples to `docs/examples.md` and link from the README.
+- CI badge URL pattern: `https://github.com/pillip/supertone-cli/actions/workflows/ci.yml/badge.svg`
+
+#### Tests
+- [ ] Manual: copy each code block in the README into a shell (with a valid API key) and confirm it exits 0
+- [ ] Cross-reference: for each CLI flag mentioned in README examples, confirm the flag exists in the relevant `commands/*.py` file
+
+#### Rollback
+Revert `README.md` to the previous 4-line version.
+
+---
+
+### ISSUE-018: Add MIT LICENSE file to repository root
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-018-add-license-file
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`pyproject.toml` declares `license = { text = "MIT" }` but no `LICENSE` file exists in the repo root. This causes PyPI warnings, prevents GitHub from showing a license badge, and leaves legal status ambiguous for downstream users.
+
+#### Scope (In/Out)
+- In: Create `LICENSE` file at repo root containing the standard MIT license text with `Copyright (c) 2026 pillip youn`; ensure `pyproject.toml` `license` field remains consistent (update to `license = { file = "LICENSE" }` if SPDX table form is preferred, otherwise keep `text = "MIT"`)
+- Out: CLA, NOTICE file, third-party license aggregation
+
+#### Acceptance Criteria (DoD)
+- [ ] Given the repo root, when `ls` is run, then a file named exactly `LICENSE` exists
+- [ ] Given `LICENSE` is opened, when read, then it contains the standard MIT license text with copyright year 2026 and holder `pillip youn`
+- [ ] Given `uv build` is run, when the produced wheel is inspected, then `LICENSE` is included in the distribution
+- [ ] Given a GitHub view of the repo, when the repository page is rendered, then the license badge shows "MIT"
+
+#### Implementation Notes
+- Use the canonical OSI MIT template (https://opensource.org/license/mit) — plain text only, no hyperlinks inside the file.
+- If switching `pyproject.toml` to `license = { file = "LICENSE" }`, verify the build succeeds with hatchling before committing; otherwise keep `text = "MIT"` and simply add the file alongside it.
+- The LICENSE file must be at the repo root (not in `src/` or `docs/`).
+
+#### Tests
+- [ ] Manual: run `uv build` and inspect `dist/*.whl` contents to confirm `LICENSE` is present (e.g., `unzip -l dist/*.whl | grep LICENSE`)
+
+#### Rollback
+Delete the `LICENSE` file. If `pyproject.toml` was modified, revert that change as well.
+
+---
+
+### ISSUE-019: Clean up repo artifacts and strengthen .gitignore
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 1d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-019-repo-cleanup
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+The repo currently ships development and runtime artifacts that should not be public. Remove them from git tracking, update `.gitignore` to prevent re-entry, and configure hatchling to exclude registry and tooling files from the published sdist/wheel.
+
+#### Scope (In/Out)
+- In: `git rm` the following tracked artifacts: `demo.wav`, `pipe.wav`, `voice_sample.wav`, `.DS_Store`, `audio/` directory, `scripts/scene1.txt`, `scripts/scene2.txt`, `scripts/scene3.txt`, `docs/sprint_state.md`, `docs/review_notes.md`, `docs/ui_review_notes.md`; update `.gitignore` to include `*.wav`, `*.mp3`, `.DS_Store`, `audio/`, `dist/`, `build/`, `*.egg-info/`, `.coverage`, `htmlcov/`, `.venv/`, `.worktrees/`, `.pytest_cache/`, `.ruff_cache/`; add hatchling `exclude` patterns in `pyproject.toml` so `issues.md`, `STATUS.md`, `.claude/`, `.claude-kit/`, and `audio/` are excluded from the published sdist/wheel
+- Out: Removing `issues.md` or `STATUS.md` from the repo (they stay on main but are excluded from the package); altering `.claude/` or `.claude-kit/` directory contents; removing legitimate source code or tests
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `git ls-files`, when inspected, then none of `demo.wav`, `pipe.wav`, `voice_sample.wav`, `.DS_Store`, `audio/*`, `scripts/scene1.txt`, `scripts/scene2.txt`, `scripts/scene3.txt`, `docs/sprint_state.md`, `docs/review_notes.md`, `docs/ui_review_notes.md` appear as tracked files
+- [ ] Given `.gitignore`, when inspected, then it contains entries for `*.wav`, `.DS_Store`, `audio/`, `.venv/`, `dist/`, `build/`, `*.egg-info/`, `.coverage`, `htmlcov/`, `.pytest_cache/`, and `.ruff_cache/`
+- [ ] Given `uv build` is run and the sdist is inspected, when `tar tzf dist/supertone_cli-*.tar.gz` is run, then `issues.md`, `STATUS.md`, `docs/sprint_state.md`, and `.claude*/` paths are absent from the archive
+- [ ] Given `uv run pytest -q` is run after the cleanup, when all tests complete, then the full test suite still passes
+
+#### Implementation Notes
+- Before deleting audio files, search `tests/` with Grep for any reference to `voice_sample.wav`, `demo.wav`, or `pipe.wav`. If a test depends on a sample file, move a small stub into `tests/fixtures/` rather than deleting it.
+- Use `git rm --cached <file>` for files to stop tracking without deleting locally; use `git rm <file>` for hard-delete of files that are not needed at all.
+- Configure hatchling exclusions in `pyproject.toml`:
+  ```toml
+  [tool.hatch.build.targets.sdist]
+  exclude = ["issues.md", "STATUS.md", "docs/sprint_state.md", "docs/review_notes.md", "docs/ui_review_notes.md", ".claude/", ".claude-kit/", ".worktrees/", "audio/", "*.wav"]
+  [tool.hatch.build.targets.wheel]
+  # already scoped to packages = ["src/supertone_cli"] — no additional exclude needed
+  ```
+- Do NOT touch `PRD.md` — that is project-defining content.
+- `STATUS.md` and `issues.md` are registry files; they remain in the repo but must not appear in the published package.
+
+#### Tests
+- [ ] Given `uv run pytest -q` after cleanup, when all tests run, then the suite is green with no test referencing a deleted file
+- [ ] Given `uv build && tar tzf dist/supertone_cli-*.tar.gz | grep -E 'issues.md|STATUS.md|\.wav|\.DS_Store'`, when run, then the command produces no output
+
+#### Rollback
+Run `git restore` to recover deleted files from the previous commit if needed.
+
+---
+
+### ISSUE-020: Enrich pyproject.toml metadata (author, urls, classifiers, keywords)
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P0
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-020-pyproject-metadata
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+Make the PyPI page informative and searchable. The current `pyproject.toml` has minimal metadata — no author email, no project URLs, no classifiers, and no keywords. A public release requires all four to be present for discoverability and PyPI validation.
+
+#### Scope (In/Out)
+- In: Update `[project]` in `pyproject.toml` with: `authors` (name + email), expanded `description` (1-line public-facing), `keywords`, `classifiers` (Development Status, Intended Audience, License, OS, Python versions, Topic, Environment); add `[project.urls]` table with `Homepage`, `Repository`, `Issues`, `Changelog` pointing at the GitHub repo
+- Out: Changing the package version; third-party badges in README (that is ISSUE-017); CHANGELOG file creation
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `pyproject.toml`, when inspected, then `[project].authors` contains `{ name = "pillip youn", email = "pillip@supertone.ai" }` and `[project].keywords` and `[project].classifiers` are non-empty lists
+- [ ] Given `pyproject.toml`, when inspected, then `[project.urls]` contains at minimum `Homepage`, `Repository`, `Issues`, and `Changelog` keys pointing at `https://github.com/pillip/supertone-cli` paths
+- [ ] Given `uv build` is run and the wheel metadata is inspected with `unzip -p dist/*.whl '*/METADATA'`, when the output is reviewed, then Author-email, Home-page, Project-URL, Keyword, and Classifier fields all appear
+- [ ] Given `twine check dist/*`, when run after `uv build`, then no warnings or errors are reported
+- [ ] Given `uv run pytest -q`, when run after the metadata change, then all tests still pass
+
+#### Implementation Notes
+- Do NOT change the version field — version bumps are a separate release concern.
+- Classifier strings must be exact Trove strings from https://pypi.org/classifiers/. Suggested classifiers:
+  ```toml
+  classifiers = [
+      "Development Status :: 4 - Beta",
+      "Environment :: Console",
+      "Intended Audience :: Developers",
+      "Intended Audience :: End Users/Desktop",
+      "License :: OSI Approved :: MIT License",
+      "Operating System :: OS Independent",
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3.11",
+      "Programming Language :: Python :: 3.12",
+      "Programming Language :: Python :: 3.13",
+      "Topic :: Multimedia :: Sound/Audio :: Speech",
+      "Topic :: Software Development :: Libraries :: Python Modules",
+  ]
+  ```
+- Suggested keywords: `["tts", "text-to-speech", "supertone", "cli", "speech-synthesis", "voice-cloning", "audio"]`
+- If a CHANGELOG file does not yet exist, point the `Changelog` URL at the GitHub releases page (`https://github.com/pillip/supertone-cli/releases`).
+- Install `twine` via `uv add twine --dev` if not already present to run `twine check`.
+
+#### Tests
+- [ ] Given `uv build && twine check dist/*`, when run, then the command exits 0 with no warnings
+- [ ] Given `uv run pytest -q`, when run after the metadata change, then all existing tests still pass
+
+#### Rollback
+Revert `pyproject.toml` to the previous state.
 
 ---
 

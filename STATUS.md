@@ -1,6 +1,6 @@
 # STATUS — Supertone CLI
 
-**Last updated**: 2026-04-03
+**Last updated**: 2026-04-11
 **Current milestone**: Phase 1 — SDK 래퍼 CLI
 
 ---
@@ -9,8 +9,8 @@
 
 | 구분 | 수량 |
 |------|------|
-| **Total** | 15 |
-| P0 (Must) | 5 |
+| **Total** | 20 |
+| P0 (Must) | 10 |
 | P1 (Should) | 8 |
 | P2 (Could) | 2 |
 
@@ -24,9 +24,9 @@
 | TTS | ISSUE-005, 006, 007, 010, 013 | 5.5d |
 | Voices | ISSUE-008, 009, 011 | 2d |
 | Usage | ISSUE-012 | 0.5d |
-| Platform | ISSUE-014, 015 | 1d |
+| Platform | ISSUE-014, 015, 016, 017, 018, 019, 020 | 4d |
 
-**Total estimate**: ~13d
+**Total estimate**: ~17d
 
 ---
 
@@ -43,9 +43,11 @@
 
 ## Next Issues to Implement
 
-1. **ISSUE-001** (P0) — Scaffold project with uv, pyproject.toml, and package structure
-2. **ISSUE-002** (P0) — Implement error hierarchy and output formatting module
-3. **ISSUE-003** (P0) — Implement config module and config commands
+1. **ISSUE-016** (P0) — Declare supertone SDK as a required dependency in pyproject.toml
+2. **ISSUE-018** (P0) — Add MIT LICENSE file to repository root
+3. **ISSUE-020** (P0) — Enrich pyproject.toml metadata (author, urls, classifiers, keywords)
+4. **ISSUE-019** (P0) — Clean up repo artifacts and strengthen .gitignore
+5. **ISSUE-017** (P0) — Rewrite README with installation, auth, and usage examples
 
 ---
 
@@ -69,4 +71,4 @@ These are informational only and do not block implementation.
 | Architecture | v1.0 Complete |
 | Data Model | v1.0 Complete |
 | Test Plan | v1.0 Complete |
-| Issues | 15 issues created |
+| Issues | 20 issues created |
