@@ -1008,6 +1008,252 @@ Revert `pyproject.toml` to the previous state.
 
 ---
 
+### ISSUE-021: Add CHANGELOG.md for 0.1.0 release
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-001
+- Priority: P1
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-021-changelog
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+A `CHANGELOG.md` exists at the repo root following Keep a Changelog 1.1.0 format, documenting the 0.1.0 initial release so users can see what has shipped without reading commit history.
+
+#### Scope (In/Out)
+- In: Create `CHANGELOG.md` at the repo root following `https://keepachangelog.com/en/1.1.0/` conventions. Include an `## [Unreleased]` section and a `## [0.1.0] - 2026-04-11` section covering: initial public release with `tts`, `tts-predict`, `voices {list,search,get,clone,edit,delete}`, `usage {balance,analytics,voices}`, `config {init,set,get,list}`; features (streaming via `--stream`, batch via `--outdir`, JSON output, Unix pipe support, NO_COLOR, exit code conventions); platform (Python 3.12+, MIT license). Link releases at the bottom with GitHub compare URLs. Add `[project.urls].Changelog` in `pyproject.toml` pointing at the GitHub releases page or direct `CHANGELOG.md` link.
+- Out: Historical reconstruction of internal issue-level changes; auto-generated changelog tooling (e.g., git-cliff, release-please) — Phase 1 uses hand-curated entries.
+
+#### Acceptance Criteria (DoD)
+- [ ] Given the repo root, when listed, then `CHANGELOG.md` exists.
+- [ ] Given `CHANGELOG.md`, when inspected, then it contains a header matching Keep a Changelog format and a `## [0.1.0] - 2026-04-11` section with Added/Fixed/Changed subsections as appropriate.
+- [ ] Given `CHANGELOG.md`, when inspected, then it lists every top-level CLI command (`tts`, `tts-predict`, `voices`, `usage`, `config`) under Added.
+- [ ] Given `pyproject.toml`, when inspected, then the `[project.urls].Changelog` key is present and its URL is valid (repo releases page or direct CHANGELOG.md link).
+
+#### Implementation Notes
+- Use the canonical Keep a Changelog 1.1.0 format. Section order: Added, Changed, Deprecated, Removed, Fixed, Security (omit empty sections).
+- Keep entries user-facing. Internal refactors and tests belong in the commit history, not the changelog.
+- Link format at the bottom: `[0.1.0]: https://github.com/pillip/supertone-cli/releases/tag/v0.1.0`
+- File to create: `CHANGELOG.md` at repo root. File to update: `pyproject.toml` `[project.urls]` table (from ISSUE-020).
+
+#### Tests
+- [ ] Manual: open in a markdown renderer and verify formatting renders correctly with no broken links.
+
+#### Rollback
+Delete the `CHANGELOG.md` file and revert the `pyproject.toml` URL addition.
+
+---
+
+### ISSUE-022: Replace `_is_auth_error` string heuristic with typed SDK exceptions
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-009, NFR-005
+- Priority: P2
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-022-typed-auth-errors
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`client.py` stops detecting authentication errors by inspecting the exception message string. Instead it catches the specific `supertone` SDK exception class (if one exists) or checks a documented HTTP status attribute, so auth errors are classified correctly even when the SDK message wording changes.
+
+#### Scope (In/Out)
+- In: Investigate what exception types `supertone>=0.2,<0.3` raises for 401/403 responses (inspect `.venv/lib/python3.12/site-packages/supertone/` for `errors.py`, `exceptions.py`, or a base error class). Replace `_is_auth_error(exc)` in `src/supertone_cli/client.py` (currently the heuristic around lines 30–35) with either: (a) an `isinstance()` check against the SDK's dedicated auth exception class, or (b) a check on the HTTP status code attribute if the SDK exposes a response object on the exception. Fall back to the existing string match only if the SDK offers neither. Apply the same replacement to every call site that currently uses `_is_auth_error`.
+- Out: Re-classifying other error categories (rate limits, server errors) — this issue is scoped strictly to auth.
+
+#### Acceptance Criteria (DoD)
+- [ ] Given the SDK raises its auth exception (or a 401-bearing exception), when the `client.py` error-translation path catches it, then `AuthError` is raised with exit code 2.
+- [ ] Given the SDK raises a non-auth exception (e.g., 500) whose message happens to contain the word "auth", when caught, then `APIError` is raised with exit code 1 (not misclassified as auth).
+- [ ] Given the existing test suite, when `uv run pytest -q` is run, then all tests pass without modification to test files.
+- [ ] Given `client.py`, when grep'd for `_is_auth_error`, then the function either no longer exists or is annotated as a last-resort fallback with a comment explaining why.
+
+#### Implementation Notes
+- Start by inspecting `.venv/lib/python3.12/site-packages/supertone/` to discover the exception hierarchy. Look for `errors.py`, `exceptions.py`, or a base error class in `__init__.py`.
+- Add a new unit test in `tests/test_client.py` that raises the real SDK exception type and asserts `AuthError` is produced.
+- Add a second unit test that raises a non-auth exception with "auth" literally in its message and asserts `APIError` is produced (regression guard against the old heuristic).
+- If the SDK has no typed exceptions, document that in a comment above the heuristic and include a reference to an upstream issue (if one can be filed).
+
+#### Tests
+- [ ] Unit: mock SDK raises its auth exception type → our wrapper surfaces `AuthError` with exit code 2.
+- [ ] Unit: mock SDK raises a non-auth exception whose message contains "auth" → our wrapper surfaces `APIError` with exit code 1.
+
+#### Rollback
+Revert the commit. The string heuristic is restored.
+
+---
+
+### ISSUE-023: Extract repeated `hasattr` boilerplate in client.py into a helper
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-004
+- Priority: P2
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-023-client-attr-helper
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`client.py` contains roughly 40 lines of repetitive `v.attr if hasattr(v, "attr") else default` patterns when converting SDK response objects to internal dataclasses (`Voice`, `Usage`, `Prediction`). Extract this into a small private helper so each conversion site becomes a single line and future SDK field changes touch one place.
+
+#### Scope (In/Out)
+- In: Add a private helper (e.g., `_attr(obj, name, default=None)`) in `src/supertone_cli/client.py` that returns `getattr(obj, name, default)` with explicit handling for the list-wrapping behavior needed by the `languages` field. Replace all duplicated `hasattr`-ternary patterns in `list_voices`, `list_custom_voices`, `search_voices`, `get_voice`, `get_usage`, `get_usage_analytics`, and `get_voice_usage`. Preserve exact current semantics including the `language` → `[language]` list-wrapping fallback.
+- Out: Changing the `Voice`, `Usage`, or `Prediction` dataclass field shapes; adding new fields; changing the SDK-response contract; extracting to a separate module.
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `list_voices()` is called with a mock SDK response, when compared against pre-refactor expectations, then the returned `Voice` objects are identical to the pre-refactor output.
+- [ ] Given `client.py`, when grep'd for `hasattr(v,`, then the match count drops by at least 20 (ideally to zero in conversion paths).
+- [ ] Given the full test suite, when `uv run pytest -q` is run, then all 106 tests pass with no modifications to test files.
+
+#### Implementation Notes
+- `getattr(obj, "attr", default)` is equivalent to the hasattr-ternary in every current usage. The only subtle case is list-wrapping for `language` (if the SDK returns a single string, wrap it in a list); this needs a dedicated helper or inline handling adjacent to `_attr`.
+- Do NOT introduce Pydantic, dataclass inheritance, or any new abstraction beyond the one helper function.
+- Keep the helper private (`_`-prefix) and file-local to `client.py`. Do not export it from the module.
+- The existing tests in `tests/test_client.py` already cover all conversion paths; no new tests are required unless behavior changes (it should not).
+
+#### Tests
+- [ ] Run existing `uv run pytest -q` — all 106 tests must pass unchanged as the sole verification of correct refactor behavior.
+
+#### Rollback
+Revert the commit. No persistent state is created.
+
+---
+
+### ISSUE-024: Track upstream SDK fix for `list_custom_voices` raw HTTP fallback
+- Track: product
+- UI: false
+- Manual: false
+- PRD-Ref: FR-005
+- Priority: P2
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-024-track-custom-voices-sdk-bug
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`client.list_custom_voices()` currently bypasses the `supertone` SDK and calls the REST API directly via `httpx` because the SDK's Pydantic model for custom voice responses requires a `description` field that the live API does not return. This workaround is fragile (bypasses the SDK's auth, retry, and observability). Add a tracking mechanism so the fallback can be deleted cleanly when upstream ships a fix.
+
+#### Scope (In/Out)
+- In: (1) Confirm the bug still reproduces against `supertone==0.2.0` with a minimal repro snippet. (2) File an issue on the upstream `supertone` SDK repository (or create `docs/upstream_bugs.md` if no public tracker exists) describing the bug: API does not return `description`, but the SDK Pydantic model requires it. (3) Add a comment block above `list_custom_voices` in `src/supertone_cli/client.py` linking to the upstream issue URL and the SDK version at which it was observed. (4) Add a `# TODO(ISSUE-024)` marker so the workaround is discoverable when upgrading the SDK.
+- Out: Fixing the upstream SDK; removing the workaround (that happens when upstream ships a fix); changing runtime behavior in any way.
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `src/supertone_cli/client.py:list_custom_voices`, when inspected, then a comment block documents the upstream bug, the SDK version it was observed against (`supertone==0.2.0`), and a link to the upstream issue or `docs/upstream_bugs.md`.
+- [ ] Given the repo, when grep'd for `TODO(ISSUE-024)`, then at least one marker exists near the raw HTTP workaround code.
+- [ ] Given the upstream issue (once filed) or `docs/upstream_bugs.md`, when inspected, then it includes a minimal repro snippet and the SDK version.
+
+#### Implementation Notes
+- Do NOT change runtime behavior — the `httpx` workaround stays until upstream ships a fix.
+- If no public bug tracker exists for the SDK (it may be internal), record the bug in `docs/upstream_bugs.md` and link to that file from the `client.py` comment. The intent is traceability, not a specific platform.
+- The comment block should follow the pattern: `# WORKAROUND(ISSUE-024): <description>. See: <link>. Remove when supertone>0.2.x fixes the Pydantic model.`
+
+#### Tests
+- [ ] None — this is a documentation-only change. The existing test suite (`uv run pytest -q`) must still pass unchanged.
+
+#### Rollback
+Revert the comment block and delete `docs/upstream_bugs.md` if it was created.
+
+---
+
+### ISSUE-025: Add optional E2E smoke test behind `-m integration` mark
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-004
+- Priority: P2
+- Estimate: 1d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-025-integration-smoke-test
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+A single end-to-end smoke test exists that exercises the real `supertone` SDK against the live API when `SUPERTONE_API_KEY` is set, gated behind pytest marker `integration` so it never runs in the default `uv run pytest -q` invocation. This gives developers and releasers a one-command sanity check before cutting a release.
+
+#### Scope (In/Out)
+- In: Register `integration` as a named pytest marker in `pyproject.toml` `[tool.pytest.ini_options].markers`. Add `tests/integration/test_smoke.py` with a single test `test_voices_list_smoke` that invokes `supertone voices list --format json` via `typer.testing.CliRunner`, asserts exit code 0, and asserts the JSON output contains at least one preset voice. Decorate the test with both `@pytest.mark.integration` and `@pytest.mark.skipif(not os.environ.get("SUPERTONE_API_KEY"), reason="needs API key")`. Add `tests/integration/__init__.py`. Add a `tests/integration/README.md` explaining how to run `uv run pytest -m integration`.
+- Out: VCR/cassette fixtures (v0 uses live API); integration tests for destructive commands (`voices clone`, `voices delete`); CI-scheduled nightly runs (separate infra issue).
+
+#### Acceptance Criteria (DoD)
+- [ ] Given `uv run pytest -q` is run without `SUPERTONE_API_KEY` set, when the suite completes, then the integration test is skipped and all 106 unit tests pass.
+- [ ] Given `uv run pytest -m integration` is run with a valid `SUPERTONE_API_KEY`, when the test completes, then `test_voices_list_smoke` passes with exit code 0.
+- [ ] Given `pyproject.toml`, when inspected, then `[tool.pytest.ini_options].markers` includes an entry for `integration` describing that it marks tests hitting the real Supertone API.
+- [ ] Given `tests/integration/test_smoke.py`, when opened, then the test uses both `pytest.mark.integration` and `pytest.mark.skipif` keyed on `SUPERTONE_API_KEY`.
+
+#### Implementation Notes
+- Use `typer.testing.CliRunner` to invoke the CLI; assert via `result.exit_code` and `json.loads(result.stdout)`.
+- The smoke test must be strictly read-only (`voices list`) — never call destructive endpoints.
+- Do NOT add the integration test to the default CI job in `.github/workflows/ci.yml`. It runs only when a developer explicitly opts in.
+- If `[tool.pytest.ini_options]` already has `filterwarnings`, `addopts`, or other keys in `pyproject.toml`, preserve them — only append the `markers` key.
+
+#### Tests
+- [ ] Given `uv run pytest -q` without `SUPERTONE_API_KEY`, when the suite runs, then the integration test appears as skipped (s) and 106 unit tests pass.
+- [ ] Given `uv run pytest -m integration` with `SUPERTONE_API_KEY` set, when the test runs, then it exits 0.
+
+#### Rollback
+Delete `tests/integration/` and remove the `integration` marker entry from `pyproject.toml`.
+
+---
+
+### ISSUE-026: Remove repo-root ruff.toml symlink, consolidate lint config in pyproject.toml
+- Track: platform
+- UI: false
+- Manual: false
+- PRD-Ref: NFR-004
+- Priority: P1
+- Estimate: 0.5d
+- Status: todo
+- Owner:
+- Branch: issue/ISSUE-026-consolidate-ruff-config
+- GH-Issue:
+- PR:
+- Depends-On: none
+
+#### Goal
+`uv run ruff check .` produces a clean result locally. Currently a `ruff.toml` symlink at the repo root points into `.claude-kit/linters/`, silently overriding the `[tool.ruff]` section in `pyproject.toml`, using stricter settings (line-length 88 vs 100), and causing ruff to scan the entire `.claude-kit/` submodule and report 200+ phantom errors from files that are not part of the project. This issue removes the symlink and makes `pyproject.toml` the single source of lint config.
+
+#### Scope (In/Out)
+- In: Delete the `ruff.toml` symlink at the repo root (`rm ruff.toml` — safe because it is a symlink, not a real file). Add `extend-exclude = [".claude-kit", ".claude", ".venv", ".worktrees", "dist", "build"]` to the `[tool.ruff]` section in `pyproject.toml`. Run `uv run ruff check .` and confirm it exits 0 or reports issues only in `src/` and `tests/`. Auto-fix any real lint issues found in project source with `--fix` or manual edits; do not silence by lowering strictness.
+- Out: Reconciling the dev-kit submodule's linting philosophy; changing line-length to 88; modifying `.claude-kit/` contents.
+
+#### Acceptance Criteria (DoD)
+- [ ] Given the repo root, when listed, then no file or symlink named `ruff.toml` exists.
+- [ ] Given `uv run ruff check .`, when executed, then the command exits 0 with no errors reported from `.claude-kit/` or `.venv/`.
+- [ ] Given `pyproject.toml`, when inspected, then `[tool.ruff].extend-exclude` includes at minimum `.claude-kit` and `.venv`.
+- [ ] Given `pyproject.toml`, when inspected, then it is the sole source of ruff configuration (no external `ruff.toml` at the repo root or any parent directory within the project).
+
+#### Implementation Notes
+- The `ruff.toml` symlink currently targets `.claude-kit/linters/ruff.toml`, which specifies `line-length = 88`, `target-version = "py311"`, `[lint] select = ["E", "F", "I"]`. Our `pyproject.toml` already has `line-length = 100`, `target-version = "py312"`, `[lint] select = ["E", "F", "I", "W"]` — our settings are stricter and more current. No migration from the submodule config is needed.
+- Command to remove the symlink: `rm /Users/pillip/project/supertone-cli/ruff.toml` (it is a symlink — safe to `rm`).
+- After adding `extend-exclude`, run `uv run ruff check src tests` to verify 0 errors. If any genuine errors surface in project source, fix them rather than suppressing them.
+- Verify the full test suite still passes after any lint-driven code fixes: `uv run pytest -q`.
+
+#### Tests
+- [ ] Given `uv run ruff check .`, when run after the symlink removal and `extend-exclude` addition, then the command exits 0.
+- [ ] Given `uv run pytest -q`, when run after any lint-driven code fixes, then all tests pass.
+
+#### Rollback
+Re-create the symlink with `ln -s .claude-kit/linters/ruff.toml ruff.toml` and revert the `pyproject.toml` `extend-exclude` addition.
+
+---
+
 ## Self-Review Summary
 
 ### Requirement Coverage

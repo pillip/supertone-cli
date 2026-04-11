@@ -9,10 +9,10 @@
 
 | 구분 | 수량 |
 |------|------|
-| **Total** | 20 |
+| **Total** | 26 |
 | P0 (Must) | 10 |
-| P1 (Should) | 8 |
-| P2 (Could) | 2 |
+| P1 (Should) | 10 |
+| P2 (Could) | 6 |
 
 ### By Track
 
@@ -24,9 +24,10 @@
 | TTS | ISSUE-005, 006, 007, 010, 013 | 5.5d |
 | Voices | ISSUE-008, 009, 011 | 2d |
 | Usage | ISSUE-012 | 0.5d |
-| Platform | ISSUE-014, 015, 016, 017, 018, 019, 020 | 4d |
+| Platform | ISSUE-014, 015, 016, 017, 018, 019, 020, 021, 025, 026 | 5.5d |
+| Quality | ISSUE-022, 023, 024 | 1.5d |
 
-**Total estimate**: ~17d
+**Total estimate**: ~20d
 
 ---
 
@@ -48,6 +49,15 @@
 3. **ISSUE-020** (P0) — Enrich pyproject.toml metadata (author, urls, classifiers, keywords)
 4. **ISSUE-019** (P0) — Clean up repo artifacts and strengthen .gitignore
 5. **ISSUE-017** (P0) — Rewrite README with installation, auth, and usage examples
+
+### Post-Release Polish
+
+1. **ISSUE-021** (P1) — Add CHANGELOG.md for 0.1.0 release
+2. **ISSUE-026** (P1) — Remove repo-root ruff.toml symlink, consolidate lint config in pyproject.toml
+3. **ISSUE-022** (P2) — Replace `_is_auth_error` string heuristic with typed SDK exceptions
+4. **ISSUE-023** (P2) — Extract repeated `hasattr` boilerplate in client.py into a helper
+5. **ISSUE-024** (P2) — Track upstream SDK fix for `list_custom_voices` raw HTTP fallback
+6. **ISSUE-025** (P2) — Add optional E2E smoke test behind `-m integration` mark
 
 ---
 
@@ -71,4 +81,4 @@ These are informational only and do not block implementation.
 | Architecture | v1.0 Complete |
 | Data Model | v1.0 Complete |
 | Test Plan | v1.0 Complete |
-| Issues | 20 issues created |
+| Issues | 26 issues created |
