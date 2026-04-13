@@ -26,6 +26,45 @@ from supertone_cli.models import (
 
 _client: Any = None
 
+_SENTINEL = object()
+
+
+def _attr(obj: Any, name: str, default: Any = None) -> Any:
+    """Safe attribute access on SDK response objects.
+
+    Equivalent to ``obj.name if hasattr(obj, "name") else default``,
+    but in a single call.  For falsy-aware defaults (e.g. empty list
+    when the attribute is None), pass the desired default explicitly.
+    """
+    return getattr(obj, name, default)
+
+
+def _languages(obj: Any) -> list[str]:
+    """Extract the language field from an SDK voice object.
+
+    The SDK may return a single string or a list.  This helper
+    normalises both forms to ``list[str]``.
+    """
+    lang = getattr(obj, "language", None)
+    if isinstance(lang, list):
+        return lang
+    if lang:
+        return [lang]
+    return []
+
+
+def _build_voice(v: Any, voice_type: str = "preset") -> Voice:
+    """Convert an SDK voice response object to a CLI Voice model."""
+    return Voice(
+        id=_attr(v, "voice_id", str(v)),
+        name=_attr(v, "name", ""),
+        type=voice_type,
+        languages=_languages(v),
+        gender=_attr(v, "gender"),
+        age=_attr(v, "age"),
+        use_cases=_attr(v, "use_cases") or [],
+    )
+
 
 def _is_auth_error(exc: Exception) -> bool:
     """Detect authentication errors from SDK exceptions.
@@ -34,7 +73,7 @@ def _is_auth_error(exc: Exception) -> bool:
     1. Typed SDK exceptions (UnauthorizedErrorResponse, ForbiddenErrorResponse)
     2. status_code attribute on SupertoneError base (401, 403)
     3. String heuristic fallback for non-SDK exceptions (e.g. plain Exception)
-       — only used when the exception has NO status_code attribute at all.
+       -- only used when the exception has NO status_code attribute at all.
     """
     # 1. Typed SDK exception classes (most reliable)
     try:
@@ -51,7 +90,7 @@ def _is_auth_error(exc: Exception) -> bool:
     # 2. Check status_code attribute on SupertoneError base
     status = getattr(exc, "status_code", None)
     if status is not None:
-        # SDK exception with a known status code — trust the code, not the message
+        # SDK exception with a known status code -- trust the code, not the message
         return status in (401, 403)
 
     # 3. Last-resort string heuristic fallback for non-SDK exceptions
@@ -70,7 +109,7 @@ def get_client() -> Any:
     if not key:
         raise AuthError("API key not configured. Run: supertone config set api_key <key>")
 
-    # Lazy import — SDK loaded only when needed (startup perf).
+    # Lazy import -- SDK loaded only when needed (startup perf).
     from supertone import Supertone
 
     _client = Supertone(api_key=key)
@@ -143,7 +182,7 @@ def _build_voice_settings(**params: Any) -> Any | None:
     return ConvertTextToSpeechParameters(**settings)
 
 
-# ── SDK operation wrappers ───────────────────────────────────────────
+# -- SDK operation wrappers ---------------------------------------------------
 
 
 def create_speech(
@@ -176,12 +215,14 @@ def create_speech(
 
         response = client.text_to_speech.create_speech(**kwargs)
         # response.result is an httpx.Response (streaming)
-        if hasattr(response, "result"):
-            result = response.result
-            if hasattr(result, "read"):
-                result.read()
-            if hasattr(result, "content"):
-                return result.content
+        result = _attr(response, "result", _SENTINEL)
+        if result is not _SENTINEL:
+            read_fn = _attr(result, "read")
+            if read_fn:
+                read_fn()
+            content = _attr(result, "content", _SENTINEL)
+            if content is not _SENTINEL:
+                return content
             return result
         return response
     except (AuthError, APIError):
@@ -245,8 +286,7 @@ def predict_duration(
             language=_get_language_enum(lang),
             model=_get_model_enum(model),
         )
-        # Response has .duration field
-        duration = response.duration if hasattr(response, "duration") else 0.0
+        duration = _attr(response, "duration", 0.0)
         return Prediction(
             duration_seconds=float(duration),
             estimated_credits=0,  # SDK doesn't return credit estimate directly
@@ -264,23 +304,8 @@ def list_voices() -> list[Voice]:
     client = get_client()
     try:
         response = client.voices.list_voices()
-        voices = []
-        items = response.items if hasattr(response, "items") else []
-        for v in items:
-            voices.append(
-                Voice(
-                    id=v.voice_id if hasattr(v, "voice_id") else str(v),
-                    name=v.name if hasattr(v, "name") else "",
-                    type="preset",
-                    languages=v.language
-                    if hasattr(v, "language") and isinstance(v.language, list)
-                    else ([v.language] if hasattr(v, "language") and v.language else []),
-                    gender=v.gender if hasattr(v, "gender") else None,
-                    age=v.age if hasattr(v, "age") else None,
-                    use_cases=v.use_cases if hasattr(v, "use_cases") and v.use_cases else [],
-                )
-            )
-        return voices
+        items = _attr(response, "items", [])
+        return [_build_voice(v) for v in items]
     except (AuthError, APIError):
         raise
     except Exception as exc:
@@ -347,23 +372,8 @@ def search_voices(**filters: Any) -> list[Voice]:
             sdk_params["name"] = filters["query"]
 
         response = client.voices.search_voices(**sdk_params)
-        voices = []
-        items = response.items if hasattr(response, "items") else []
-        for v in items:
-            voices.append(
-                Voice(
-                    id=v.voice_id if hasattr(v, "voice_id") else str(v),
-                    name=v.name if hasattr(v, "name") else "",
-                    type="preset",
-                    languages=v.language
-                    if hasattr(v, "language") and isinstance(v.language, list)
-                    else ([v.language] if hasattr(v, "language") and v.language else []),
-                    gender=v.gender if hasattr(v, "gender") else None,
-                    age=v.age if hasattr(v, "age") else None,
-                    use_cases=v.use_cases if hasattr(v, "use_cases") and v.use_cases else [],
-                )
-            )
-        return voices
+        items = _attr(response, "items", [])
+        return [_build_voice(v) for v in items]
     except (AuthError, APIError):
         raise
     except Exception as exc:
@@ -388,7 +398,7 @@ def clone_voice(name: str, sample_path: str) -> CloneResult:
             files=files,
             name=name,
         )
-        voice_id = response.voice_id if hasattr(response, "voice_id") else ""
+        voice_id = _attr(response, "voice_id", "")
         return CloneResult(voice_id=voice_id, name=name)
     except (AuthError, APIError):
         raise
@@ -404,15 +414,13 @@ def get_voice(voice_id: str) -> Voice:
     try:
         v = client.voices.get_voice(voice_id=voice_id)
         return Voice(
-            id=v.voice_id if hasattr(v, "voice_id") else voice_id,
-            name=v.name if hasattr(v, "name") else "",
+            id=_attr(v, "voice_id", voice_id),
+            name=_attr(v, "name", ""),
             type="preset",
-            languages=v.language
-            if hasattr(v, "language") and isinstance(v.language, list)
-            else ([v.language] if hasattr(v, "language") and v.language else []),
-            gender=v.gender if hasattr(v, "gender") else None,
-            age=v.age if hasattr(v, "age") else None,
-            use_cases=v.use_cases if hasattr(v, "use_cases") and v.use_cases else [],
+            languages=_languages(v),
+            gender=_attr(v, "gender"),
+            age=_attr(v, "age"),
+            use_cases=_attr(v, "use_cases") or [],
         )
     except (AuthError, APIError):
         raise
@@ -437,8 +445,8 @@ def edit_custom_voice(
             kwargs["description"] = description
         response = client.custom_voices.edit_custom_voice(**kwargs)
         return CloneResult(
-            voice_id=response.voice_id if hasattr(response, "voice_id") else voice_id,
-            name=response.name if hasattr(response, "name") else (name or ""),
+            voice_id=_attr(response, "voice_id", voice_id),
+            name=_attr(response, "name", name or ""),
         )
     except (AuthError, APIError):
         raise
@@ -466,7 +474,7 @@ def get_usage() -> Usage:
     client = get_client()
     try:
         response = client.usage.get_credit_balance()
-        balance = response.balance if hasattr(response, "balance") else 0
+        balance = _attr(response, "balance", 0)
         return Usage(
             plan="",
             used=0,
@@ -497,19 +505,17 @@ def get_usage_analytics(
             bucket_width=bw,
         )
         results = []
-        data = response.data if hasattr(response, "data") else []
+        data = _attr(response, "data", [])
         for bucket in data:
-            for r in bucket.results if hasattr(bucket, "results") else []:
+            for r in _attr(bucket, "results", []):
                 results.append(
                     {
-                        "period_start": bucket.starting_at
-                        if hasattr(bucket, "starting_at")
-                        else "",
-                        "period_end": bucket.ending_at if hasattr(bucket, "ending_at") else "",
-                        "minutes_used": r.minutes_used if hasattr(r, "minutes_used") else 0,
-                        "voice_id": r.voice_id if hasattr(r, "voice_id") else None,
-                        "voice_name": r.voice_name if hasattr(r, "voice_name") else None,
-                        "model": r.model if hasattr(r, "model") else None,
+                        "period_start": _attr(bucket, "starting_at", ""),
+                        "period_end": _attr(bucket, "ending_at", ""),
+                        "minutes_used": _attr(r, "minutes_used", 0),
+                        "voice_id": _attr(r, "voice_id"),
+                        "voice_name": _attr(r, "voice_name"),
+                        "model": _attr(r, "model"),
                     }
                 )
         return results
@@ -529,15 +535,15 @@ def get_voice_usage(start_date: str, end_date: str) -> list[dict]:
             start_date=start_date,
             end_date=end_date,
         )
-        usages = response.usages if hasattr(response, "usages") else []
+        usages = _attr(response, "usages", [])
         return [
             {
-                "date": u.date_ if hasattr(u, "date_") else "",
-                "voice_id": u.voice_id if hasattr(u, "voice_id") else "",
-                "name": u.name if hasattr(u, "name") else None,
-                "minutes_used": u.total_minutes_used if hasattr(u, "total_minutes_used") else 0,
-                "model": u.model if hasattr(u, "model") else None,
-                "language": u.language if hasattr(u, "language") else None,
+                "date": _attr(u, "date_", ""),
+                "voice_id": _attr(u, "voice_id", ""),
+                "name": _attr(u, "name"),
+                "minutes_used": _attr(u, "total_minutes_used", 0),
+                "model": _attr(u, "model"),
+                "language": _attr(u, "language"),
             }
             for u in usages
         ]

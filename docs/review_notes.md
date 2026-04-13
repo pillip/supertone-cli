@@ -1,16 +1,17 @@
-# Review Notes — ISSUE-022
+# Review Notes — ISSUE-023
 
 ## Code Review
 - **Verdict**: Approved
-- Clear 3-tier priority in _is_auth_error: isinstance -> status_code -> string fallback
-- Removed overly broad "auth" keyword from string heuristic
-- String fallback only activates for non-SDK exceptions (no status_code attr)
-- SDK exceptions with status_code always use code-based classification
-- 4 new tests with real assertions covering typed, status_code, and anti-regression
+- `_attr(obj, name, default)` correctly uses `getattr` -- semantically equivalent to hasattr-ternary
+- `_languages()` handles both list and scalar forms, matching original logic
+- `_build_voice()` deduplicates Voice construction across list_voices, search_voices, get_voice
+- hasattr count reduced from 47 to 2 (remaining are non-attribute patterns)
+- `_SENTINEL` pattern used for create_speech response.result detection
 - All existing tests pass unchanged
+- No behavior changes
 
 ## Security Findings
-- None. Auth error detection is now more precise, reducing false positives.
+- None
 
 ## Follow-ups
 - None
