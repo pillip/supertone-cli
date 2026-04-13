@@ -88,6 +88,9 @@ exclude = [
 minversion = "7.0"
 addopts = "-ra"
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests that hit the real Supertone API (requires SUPERTONE_API_KEY)",
+]
 
 [tool.ruff]
 line-length = 100
