@@ -9,9 +9,9 @@
 
 | 구분 | 수량 |
 |------|------|
-| **Total** | 26 |
+| **Total** | 27 |
 | P0 (Must) | 10 |
-| P1 (Should) | 10 |
+| P1 (Should) | 11 |
 | P2 (Could) | 6 |
 
 ### By Track
@@ -24,10 +24,11 @@
 | TTS | ISSUE-005, 006, 007, 010, 013 | 5.5d |
 | Voices | ISSUE-008, 009, 011 | 2d |
 | Usage | ISSUE-012 | 0.5d |
+| Product (post-MVP) | ISSUE-027 | 1d |
 | Platform | ISSUE-014, 015, 016, 017, 018, 019, 020, 021, 025, 026 | 5.5d |
 | Quality | ISSUE-022, 023, 024 | 1.5d |
 
-**Total estimate**: ~20d
+**Total estimate**: ~21d
 
 ---
 
@@ -81,4 +82,4 @@ These are informational only and do not block implementation.
 | Architecture | v1.0 Complete |
 | Data Model | v1.0 Complete |
 | Test Plan | v1.0 Complete |
-| Issues | 26 issues created |
+| Issues | 27 issues created |

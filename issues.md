@@ -783,7 +783,7 @@ Delete the workflow file.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-016-declare-sdk-dependency
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -826,7 +826,7 @@ Revert the `pyproject.toml` change and run `uv sync` to restore the previous `uv
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-017-readme-rewrite
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -869,7 +869,7 @@ Revert `README.md` to the previous 4-line version.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-018-add-license-file
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -909,7 +909,7 @@ Delete the `LICENSE` file. If `pyproject.toml` was modified, revert that change 
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-019-repo-cleanup
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -958,7 +958,7 @@ Run `git restore` to recover deleted files from the previous commit if needed.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-020-pyproject-metadata
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1018,7 +1018,7 @@ Revert `pyproject.toml` to the previous state.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-021-changelog
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1059,7 +1059,7 @@ Delete the `CHANGELOG.md` file and revert the `pyproject.toml` URL addition.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-022-typed-auth-errors
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1101,7 +1101,7 @@ Revert the commit. The string heuristic is restored.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-023-client-attr-helper
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1141,7 +1141,7 @@ Revert the commit. No persistent state is created.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-024-track-custom-voices-sdk-bug
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1180,7 +1180,7 @@ Revert the comment block and delete `docs/upstream_bugs.md` if it was created.
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-025-integration-smoke-test
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1222,7 +1222,7 @@ Delete `tests/integration/` and remove the `integration` marker entry from `pypr
 - Status: todo
 - Owner:
 - Branch: issue/ISSUE-026-consolidate-ruff-config
-- GH-Issue:
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
 - PR:
 - Depends-On: none
 
@@ -1251,6 +1251,43 @@ Delete `tests/integration/` and remove the `integration` marker entry from `pypr
 
 #### Rollback
 Re-create the symlink with `ln -s .claude-kit/linters/ruff.toml ruff.toml` and revert the `pyproject.toml` `extend-exclude` addition.
+
+---
+
+### ISSUE-027: Wire up SDK-wide CLI surface (voice settings, voices CRUD, usage subcommands)
+- Track: product
+- UI: true
+- Manual: false
+- PRD-Ref: FR-002, FR-005, FR-010
+- Priority: P1
+- Estimate: 1d
+- Status: done
+- Owner:
+- Branch: issue/ISSUE-027-sdk-wide-surface
+- GH-Issue: https://github.com/pillip/supertone-cli/issues/32
+- PR: https://github.com/pillip/supertone-cli/pull/31
+- Depends-On: none
+
+#### Goal
+Expose the full SDK feature surface in the CLI: TTS voice/audio parameter flags (--style/--speed/--pitch/--pitch-variance/--similarity/--text-guidance), voices get/edit/delete, and usage balance/analytics/voices subcommand group.
+
+#### Scope (In/Out)
+- In: TTS voice settings CLI flags + model validation, voices get/edit/delete subcommands, usage subcommand group refactor, Voice.languages default, 26 new tests (10 client wrapper + 16 command-level).
+- Out: CHANGELOG, integration tests, auth heuristic, hasattr cleanup.
+
+#### Acceptance Criteria (DoD)
+- [x] Given `supertone voices --help`, then get/clone/edit/delete are listed.
+- [x] Given `supertone usage --help`, then balance/analytics/voices are listed.
+- [x] Given voice setting flags, then create_speech receives the correct kwargs.
+- [x] Given `uv run pytest -q`, then 131 tests pass.
+- [x] Given `uv run pytest --cov=src --cov-fail-under=80`, then coverage >= 80%.
+- [x] CI: 4/4 pass (ubuntu/macos × 3.12/3.13).
+
+#### Tests
+- [x] 131 passed (106 baseline + 16 command + 10 client wrapper - 1 reclassified).
+
+#### Rollback
+Revert the squash-merge commit on main.
 
 ---
 
