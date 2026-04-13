@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from supertone_cli.errors import APIError, AuthError
 
 # ── Data model tests ─────────────────────────────────────────────────
