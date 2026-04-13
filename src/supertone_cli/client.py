@@ -28,9 +28,36 @@ _client: Any = None
 
 
 def _is_auth_error(exc: Exception) -> bool:
-    """Heuristic: detect authentication errors from SDK exceptions."""
+    """Detect authentication errors from SDK exceptions.
+
+    Priority order:
+    1. Typed SDK exceptions (UnauthorizedErrorResponse, ForbiddenErrorResponse)
+    2. status_code attribute on SupertoneError base (401, 403)
+    3. String heuristic fallback for non-SDK exceptions (e.g. plain Exception)
+       — only used when the exception has NO status_code attribute at all.
+    """
+    # 1. Typed SDK exception classes (most reliable)
+    try:
+        from supertone.errors import (
+            ForbiddenErrorResponse,
+            UnauthorizedErrorResponse,
+        )
+
+        if isinstance(exc, (UnauthorizedErrorResponse, ForbiddenErrorResponse)):
+            return True
+    except ImportError:
+        pass
+
+    # 2. Check status_code attribute on SupertoneError base
+    status = getattr(exc, "status_code", None)
+    if status is not None:
+        # SDK exception with a known status code — trust the code, not the message
+        return status in (401, 403)
+
+    # 3. Last-resort string heuristic fallback for non-SDK exceptions
+    # (e.g., plain Exception from unexpected code paths)
     msg = str(exc).lower()
-    return any(kw in msg for kw in ("auth", "unauthorized", "forbidden", "invalid key", "401"))
+    return any(kw in msg for kw in ("unauthorized", "forbidden", "invalid key", "401"))
 
 
 def get_client() -> Any:

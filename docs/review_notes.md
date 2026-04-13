@@ -1,14 +1,16 @@
-# Review Notes — ISSUE-024
+# Review Notes — ISSUE-022
 
 ## Code Review
 - **Verdict**: Approved
-- WORKAROUND(ISSUE-024) comment block correctly placed above list_custom_voices
-- docs/upstream_bugs.md contains minimal repro, SDK version, and resolution plan
-- No runtime behavior changes (documentation only)
-- Tests verify marker existence and doc content
+- Clear 3-tier priority in _is_auth_error: isinstance -> status_code -> string fallback
+- Removed overly broad "auth" keyword from string heuristic
+- String fallback only activates for non-SDK exceptions (no status_code attr)
+- SDK exceptions with status_code always use code-based classification
+- 4 new tests with real assertions covering typed, status_code, and anti-regression
+- All existing tests pass unchanged
 
 ## Security Findings
-- None (documentation-only change)
+- None. Auth error detection is now more precise, reducing false positives.
 
 ## Follow-ups
 - None
