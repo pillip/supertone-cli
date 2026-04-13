@@ -30,9 +30,7 @@ _client: Any = None
 def _is_auth_error(exc: Exception) -> bool:
     """Heuristic: detect authentication errors from SDK exceptions."""
     msg = str(exc).lower()
-    return any(
-        kw in msg for kw in ("auth", "unauthorized", "forbidden", "invalid key", "401")
-    )
+    return any(kw in msg for kw in ("auth", "unauthorized", "forbidden", "invalid key", "401"))
 
 
 def get_client() -> Any:
@@ -43,9 +41,7 @@ def get_client() -> Any:
 
     key = get_api_key()
     if not key:
-        raise AuthError(
-            "API key not configured. Run: supertone config set api_key <key>"
-        )
+        raise AuthError("API key not configured. Run: supertone config set api_key <key>")
 
     # Lazy import — SDK loaded only when needed (startup perf).
     from supertone import Supertone
@@ -80,9 +76,7 @@ def _get_model_enum(model: str) -> Any:
     if model not in mapping:
         from supertone_cli.errors import InputError
 
-        raise InputError(
-            f"Unsupported model: {model}. Valid: {', '.join(sorted(mapping.keys()))}"
-        )
+        raise InputError(f"Unsupported model: {model}. Valid: {', '.join(sorted(mapping.keys()))}")
     return mapping[model]
 
 
@@ -96,9 +90,7 @@ def _get_format_enum(fmt: str) -> Any:
     if fmt not in mapping:
         from supertone_cli.errors import InputError
 
-        raise InputError(
-            f"Unsupported format: {fmt}. Valid: {', '.join(sorted(mapping.keys()))}"
-        )
+        raise InputError(f"Unsupported format: {fmt}. Valid: {', '.join(sorted(mapping.keys()))}")
     return mapping[fmt]
 
 
@@ -255,14 +247,10 @@ def list_voices() -> list[Voice]:
                     type="preset",
                     languages=v.language
                     if hasattr(v, "language") and isinstance(v.language, list)
-                    else (
-                        [v.language] if hasattr(v, "language") and v.language else []
-                    ),
+                    else ([v.language] if hasattr(v, "language") and v.language else []),
                     gender=v.gender if hasattr(v, "gender") else None,
                     age=v.age if hasattr(v, "age") else None,
-                    use_cases=v.use_cases
-                    if hasattr(v, "use_cases") and v.use_cases
-                    else [],
+                    use_cases=v.use_cases if hasattr(v, "use_cases") and v.use_cases else [],
                 )
             )
         return voices
@@ -274,6 +262,11 @@ def list_voices() -> list[Voice]:
         raise APIError(str(exc)) from exc
 
 
+# WORKAROUND(ISSUE-024): The supertone SDK (v0.2.0) Pydantic model for custom
+# voice responses requires a 'description' field that the live API does not
+# return, causing a ValidationError. We bypass the SDK and call the REST API
+# directly via httpx. This workaround should be removed when upstream ships a
+# fix (supertone > 0.2.x). See: docs/upstream_bugs.md
 def list_custom_voices() -> list[Voice]:
     """List custom (cloned) voices via raw HTTP.
 
@@ -337,14 +330,10 @@ def search_voices(**filters: Any) -> list[Voice]:
                     type="preset",
                     languages=v.language
                     if hasattr(v, "language") and isinstance(v.language, list)
-                    else (
-                        [v.language] if hasattr(v, "language") and v.language else []
-                    ),
+                    else ([v.language] if hasattr(v, "language") and v.language else []),
                     gender=v.gender if hasattr(v, "gender") else None,
                     age=v.age if hasattr(v, "age") else None,
-                    use_cases=v.use_cases
-                    if hasattr(v, "use_cases") and v.use_cases
-                    else [],
+                    use_cases=v.use_cases if hasattr(v, "use_cases") and v.use_cases else [],
                 )
             )
         return voices
@@ -489,16 +478,10 @@ def get_usage_analytics(
                         "period_start": bucket.starting_at
                         if hasattr(bucket, "starting_at")
                         else "",
-                        "period_end": bucket.ending_at
-                        if hasattr(bucket, "ending_at")
-                        else "",
-                        "minutes_used": r.minutes_used
-                        if hasattr(r, "minutes_used")
-                        else 0,
+                        "period_end": bucket.ending_at if hasattr(bucket, "ending_at") else "",
+                        "minutes_used": r.minutes_used if hasattr(r, "minutes_used") else 0,
                         "voice_id": r.voice_id if hasattr(r, "voice_id") else None,
-                        "voice_name": r.voice_name
-                        if hasattr(r, "voice_name")
-                        else None,
+                        "voice_name": r.voice_name if hasattr(r, "voice_name") else None,
                         "model": r.model if hasattr(r, "model") else None,
                     }
                 )
@@ -525,9 +508,7 @@ def get_voice_usage(start_date: str, end_date: str) -> list[dict]:
                 "date": u.date_ if hasattr(u, "date_") else "",
                 "voice_id": u.voice_id if hasattr(u, "voice_id") else "",
                 "name": u.name if hasattr(u, "name") else None,
-                "minutes_used": u.total_minutes_used
-                if hasattr(u, "total_minutes_used")
-                else 0,
+                "minutes_used": u.total_minutes_used if hasattr(u, "total_minutes_used") else 0,
                 "model": u.model if hasattr(u, "model") else None,
                 "language": u.language if hasattr(u, "language") else None,
             }
