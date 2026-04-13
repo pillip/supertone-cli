@@ -107,3 +107,93 @@ def test_voices_list_json_empty():
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data == []
+
+
+# ── voices get ───────────────────────────────────────────────────────
+
+
+def test_voices_get_human_readable():
+    """voices get prints Name/ID/Type/Languages."""
+    voice = Voice(
+        id="v1",
+        name="Test Voice",
+        type="preset",
+        languages=["ko", "en"],
+        gender="female",
+        age="adult",
+        use_cases=["narration"],
+    )
+    with patch("supertone_cli.client.get_voice", return_value=voice):
+        result = runner.invoke(app, ["voices", "get", "v1"])
+    assert result.exit_code == 0
+    assert "Test Voice" in result.output
+    assert "v1" in result.output
+    assert "ko" in result.output
+
+
+def test_voices_get_format_json():
+    """voices get --format json produces valid JSON."""
+    voice = Voice(id="v1", name="Test", type="preset", languages=["ko"])
+    with patch("supertone_cli.client.get_voice", return_value=voice):
+        result = runner.invoke(app, ["voices", "get", "v1", "--format", "json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["id"] == "v1"
+    assert data["name"] == "Test"
+
+
+# ── voices edit ──────────────────────────────────────────────────────
+
+
+def test_voices_edit_name():
+    """voices edit --name updates the voice."""
+    from supertone_cli.models import CloneResult
+
+    with patch(
+        "supertone_cli.client.edit_custom_voice",
+        return_value=CloneResult(voice_id="v1", name="Renamed"),
+    ) as mock_edit:
+        result = runner.invoke(app, ["voices", "edit", "v1", "--name", "Renamed"])
+    assert result.exit_code == 0
+    mock_edit.assert_called_once_with("v1", name="Renamed", description=None)
+
+
+def test_voices_edit_requires_field():
+    """voices edit with neither --name nor --description exits with error."""
+    result = runner.invoke(app, ["voices", "edit", "v1"])
+    assert result.exit_code != 0
+
+
+def test_voices_edit_format_json():
+    """voices edit --format json returns JSON result."""
+    from supertone_cli.models import CloneResult
+
+    with patch(
+        "supertone_cli.client.edit_custom_voice",
+        return_value=CloneResult(voice_id="v1", name="New"),
+    ):
+        result = runner.invoke(
+            app, ["voices", "edit", "v1", "--name", "New", "--format", "json"]
+        )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["voice_id"] == "v1"
+
+
+# ── voices delete ────────────────────────────────────────────────────
+
+
+def test_voices_delete_with_yes():
+    """voices delete --yes skips confirmation."""
+    with patch("supertone_cli.client.delete_custom_voice") as mock_delete:
+        result = runner.invoke(app, ["voices", "delete", "v1", "--yes"])
+    assert result.exit_code == 0
+    mock_delete.assert_called_once_with("v1")
+
+
+def test_voices_delete_confirmation_declined():
+    """voices delete aborts when user declines confirmation."""
+    with patch("supertone_cli.client.delete_custom_voice") as mock_delete:
+        result = runner.invoke(app, ["voices", "delete", "v1"], input="n\n")
+    assert result.exit_code != 0
+    mock_delete.assert_not_called()

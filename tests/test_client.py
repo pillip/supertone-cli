@@ -241,3 +241,186 @@ def test_get_usage_returns_usage():
         usage = get_usage()
         assert isinstance(usage, Usage)
         assert usage.remaining == 900
+
+
+# ── Additional client wrapper coverage ──────────────────────────────
+
+
+def test_search_voices_returns_filtered_list():
+    from supertone_cli.client import search_voices
+    from supertone_cli.models import Voice
+
+    mock_client = MagicMock()
+    mock_voice = MagicMock()
+    mock_voice.voice_id = "v2"
+    mock_voice.name = "Search Result"
+    mock_voice.language = ["ko", "en"]
+    mock_voice.gender = "female"
+    mock_voice.age = "adult"
+    mock_voice.use_cases = ["narration"]
+    mock_response = MagicMock()
+    mock_response.items = [mock_voice]
+    mock_client.voices.search_voices.return_value = mock_response
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        voices = search_voices(lang="ko", gender="female")
+        assert len(voices) == 1
+        assert isinstance(voices[0], Voice)
+        assert voices[0].id == "v2"
+        mock_client.voices.search_voices.assert_called_once_with(
+            language="ko", gender="female"
+        )
+
+
+def test_get_voice_returns_voice():
+    from supertone_cli.client import get_voice
+    from supertone_cli.models import Voice
+
+    mock_client = MagicMock()
+    mock_v = MagicMock()
+    mock_v.voice_id = "v1"
+    mock_v.name = "Test"
+    mock_v.language = "ko"
+    mock_v.gender = "male"
+    mock_v.age = "adult"
+    mock_v.use_cases = ["audiobook"]
+    mock_client.voices.get_voice.return_value = mock_v
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        voice = get_voice("v1")
+        assert isinstance(voice, Voice)
+        assert voice.id == "v1"
+        assert voice.name == "Test"
+
+
+def test_edit_custom_voice_returns_result():
+    from supertone_cli.client import edit_custom_voice
+    from supertone_cli.models import CloneResult
+
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.voice_id = "v1"
+    mock_resp.name = "Renamed"
+    mock_client.custom_voices.edit_custom_voice.return_value = mock_resp
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        result = edit_custom_voice("v1", name="Renamed")
+        assert isinstance(result, CloneResult)
+        assert result.voice_id == "v1"
+
+
+def test_delete_custom_voice_calls_sdk():
+    from supertone_cli.client import delete_custom_voice
+
+    mock_client = MagicMock()
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        delete_custom_voice("v1")
+        mock_client.custom_voices.delete_custom_voice.assert_called_once_with(
+            voice_id="v1"
+        )
+
+
+def test_stream_speech_yields_chunks():
+    from supertone_cli.client import stream_speech
+
+    mock_client = MagicMock()
+    mock_client.text_to_speech.stream_speech.return_value = [b"chunk1", b"chunk2"]
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        chunks = list(stream_speech("Hello", "v1", "sona_speech_1", "ko"))
+        assert chunks == [b"chunk1", b"chunk2"]
+
+
+def test_get_usage_analytics_returns_list():
+    from supertone_cli.client import get_usage_analytics
+
+    mock_client = MagicMock()
+    mock_bucket = MagicMock()
+    mock_bucket.starting_at = "2026-04-01"
+    mock_bucket.ending_at = "2026-04-02"
+    mock_result = MagicMock()
+    mock_result.minutes_used = 5.5
+    mock_result.voice_id = "v1"
+    mock_result.voice_name = "Voice1"
+    mock_result.model = "sona_speech_2"
+    mock_bucket.results = [mock_result]
+    mock_response = MagicMock()
+    mock_response.data = [mock_bucket]
+    mock_client.usage.get_usage.return_value = mock_response
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        results = get_usage_analytics("2026-04-01", "2026-04-02", "day")
+        assert len(results) == 1
+        assert results[0]["minutes_used"] == 5.5
+        assert results[0]["voice_name"] == "Voice1"
+
+
+def test_get_voice_usage_returns_list():
+    from supertone_cli.client import get_voice_usage
+
+    mock_client = MagicMock()
+    mock_u = MagicMock()
+    mock_u.date_ = "2026-04-01"
+    mock_u.voice_id = "v1"
+    mock_u.name = "Voice1"
+    mock_u.total_minutes_used = 3.2
+    mock_u.model = "sona_speech_2"
+    mock_u.language = "ko"
+    mock_response = MagicMock()
+    mock_response.usages = [mock_u]
+    mock_client.usage.get_voice_usage.return_value = mock_response
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        results = get_voice_usage("2026-04-01", "2026-04-30")
+        assert len(results) == 1
+        assert results[0]["date"] == "2026-04-01"
+        assert results[0]["minutes_used"] == 3.2
+
+
+def test_list_custom_voices_via_httpx():
+    from supertone_cli.client import list_custom_voices
+    from supertone_cli.models import Voice
+
+    mock_client = MagicMock()
+    mock_client.sdk_configuration.get_server_details.return_value = [
+        "https://api.supertone.ai"
+    ]
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"items": [{"voice_id": "c1", "name": "Custom1"}]}
+    mock_resp.raise_for_status = MagicMock()
+
+    with (
+        patch("supertone_cli.client.get_client", return_value=mock_client),
+        patch("supertone_cli.client.get_api_key", return_value="sk-test"),
+        patch("httpx.get", return_value=mock_resp),
+    ):
+        voices = list_custom_voices()
+        assert len(voices) == 1
+        assert isinstance(voices[0], Voice)
+        assert voices[0].id == "c1"
+        assert voices[0].type == "custom"
+
+
+def test_create_speech_with_voice_settings():
+    from supertone_cli.client import create_speech
+
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.result = b"audio-with-settings"
+    mock_client.text_to_speech.create_speech.return_value = mock_response
+
+    with patch("supertone_cli.client.get_client", return_value=mock_client):
+        result = create_speech(
+            "Hello",
+            "v1",
+            "sona_speech_2",
+            "ko",
+            style="calm",
+            speed=1.2,
+            pitch_shift=-1.0,
+        )
+        assert result == b"audio-with-settings"
+        call_kwargs = mock_client.text_to_speech.create_speech.call_args.kwargs
+        assert "style" in call_kwargs
+        assert "voice_settings" in call_kwargs

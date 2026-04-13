@@ -191,3 +191,78 @@ def test_tts_format_json_with_stdout_raises_input_error():
     )
     assert result.exit_code != 0
     assert isinstance(result.exception, InputError)
+
+
+# ── Voice setting flag passthrough ───────────────────────────────────
+
+
+def test_tts_voice_setting_flags_forwarded(tmp_path):
+    """All voice setting flags reach create_speech as kwargs."""
+    out = tmp_path / "out.wav"
+    with patch(
+        "supertone_cli.commands.tts.create_speech",
+        return_value=b"audio",
+    ) as mock_create:
+        result = runner.invoke(
+            app,
+            [
+                "tts",
+                "Hello",
+                "--voice",
+                "v1",
+                "--output",
+                str(out),
+                "--style",
+                "calm",
+                "--speed",
+                "1.2",
+                "--pitch",
+                "-1.5",
+                "--pitch-variance",
+                "0.8",
+                "--similarity",
+                "0.9",
+                "--text-guidance",
+                "0.7",
+            ],
+        )
+    assert result.exit_code == 0
+    kwargs = mock_create.call_args.kwargs
+    assert kwargs["style"] == "calm"
+    assert kwargs["speed"] == 1.2
+    assert kwargs["pitch_shift"] == -1.5
+    assert kwargs["pitch_variance"] == 0.8
+    assert kwargs["similarity"] == 0.9
+    assert kwargs["text_guidance"] == 0.7
+
+
+def test_tts_flash_rejects_similarity(tmp_path):
+    """sona_speech_2_flash + --similarity raises InputError end-to-end."""
+    out = tmp_path / "out.wav"
+    result = runner.invoke(
+        app,
+        [
+            "tts",
+            "Hello",
+            "--voice",
+            "v1",
+            "--model",
+            "sona_speech_2_flash",
+            "--similarity",
+            "0.8",
+            "--output",
+            str(out),
+        ],
+    )
+    assert result.exit_code != 0
+    assert isinstance(result.exception, InputError)
+
+
+def test_tts_unsupported_output_format_raises():
+    """--output-format ogg is rejected at CLI layer."""
+    result = runner.invoke(
+        app,
+        ["tts", "Hello", "--voice", "v1", "--output-format", "ogg"],
+    )
+    assert result.exit_code != 0
+    assert isinstance(result.exception, InputError)

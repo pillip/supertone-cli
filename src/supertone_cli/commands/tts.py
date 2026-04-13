@@ -23,7 +23,10 @@ VALID_MODELS = {
     "supertonic_api_1",
     "sona_speech_2",
     "sona_speech_2_flash",
+    "sona_speech_2t",
 }
+
+VALID_OUTPUT_FORMATS = {"wav", "mp3"}
 
 # Model-parameter compatibility matrix
 _FLASH_DISALLOWED = {"similarity", "text_guidance"}
@@ -43,15 +46,13 @@ def validate_params(model: str, **kwargs: object) -> None:
     if model == "sona_speech_2_flash":
         bad = set(params) & _FLASH_DISALLOWED
         if bad:
-            raise InputError(
-                f"Parameters not supported by {model}: {', '.join(sorted(bad))}"
-            )
+            raise InputError(f"Not supported by {model}: {', '.join(sorted(bad))}")
 
     if model == "supertonic_api_1":
         bad = set(params) - _SUPERTONIC_ALLOWED - {"stream"}
         if bad:
             raise InputError(
-                f"Parameters not supported by {model}: "
+                f"Not supported by {model}: "
                 f"{', '.join(sorted(bad))}. "
                 f"Only speed is supported."
             )
@@ -116,6 +117,28 @@ def _collect_batch_files(input_path: str) -> list[Path]:
     return files
 
 
+def _build_settings_kwargs(
+    speed: float | None,
+    pitch: float | None,
+    pitch_variance: float | None,
+    similarity: float | None,
+    text_guidance: float | None,
+) -> dict:
+    """Build voice_settings kwargs for client.create_speech."""
+    settings: dict = {}
+    if speed is not None:
+        settings["speed"] = speed
+    if pitch is not None:
+        settings["pitch_shift"] = pitch
+    if pitch_variance is not None:
+        settings["pitch_variance"] = pitch_variance
+    if similarity is not None:
+        settings["similarity"] = similarity
+    if text_guidance is not None:
+        settings["text_guidance"] = text_guidance
+    return settings
+
+
 def _run_batch(
     input_path: str,
     outdir: str,
@@ -123,7 +146,9 @@ def _run_batch(
     voice: str,
     model: str,
     lang: str,
+    style: str | None,
     fail_fast: bool,
+    **voice_settings: object,
 ) -> None:
     """Process batch TTS for all .txt files in a directory."""
     files = _collect_batch_files(input_path)
@@ -145,6 +170,8 @@ def _run_batch(
                 model=model,
                 lang=lang,
                 output_format=output_format,
+                style=style,
+                **voice_settings,
             )
             out_file.write_bytes(audio)
             succeeded += 1
@@ -168,6 +195,8 @@ def _run_stream(
     model: str,
     lang: str,
     output: str | None,
+    style: str | None = None,
+    **voice_settings: object,
 ) -> None:
     """Stream TTS audio to the system audio device."""
     try:
@@ -180,11 +209,16 @@ def _run_stream(
     from supertone_cli.client import stream_speech
 
     chunks: list[bytes] = []
-    for chunk in stream_speech(text=text, voice=voice, model=model, lang=lang):
+    for chunk in stream_speech(
+        text=text,
+        voice=voice,
+        model=model,
+        lang=lang,
+        style=style,
+        **voice_settings,
+    ):
         chunks.append(chunk)
-        # In a real implementation, play chunk via sounddevice here
 
-    # Save to file if --output specified
     if output and output != "-":
         Path(output).write_bytes(b"".join(chunks))
 
@@ -192,7 +226,7 @@ def _run_stream(
     typer.echo(f"Streamed: {total_bytes} bytes", err=True)
 
 
-def _run_tts(
+def _run_tts(  # noqa: PLR0913
     text: str | None,
     input: str | None,
     output: str | None,
@@ -200,12 +234,22 @@ def _run_tts(
     voice: str | None,
     model: str | None,
     lang: str | None,
+    style: str | None,
     format: str,
     outdir: str | None = None,
     fail_fast: bool = False,
     stream: bool = False,
+    speed: float | None = None,
+    pitch: float | None = None,
+    pitch_variance: float | None = None,
+    similarity: float | None = None,
+    text_guidance: float | None = None,
 ) -> None:
     """Core TTS logic shared by the command."""
+    if output_format not in VALID_OUTPUT_FORMATS:
+        valid = ", ".join(sorted(VALID_OUTPUT_FORMATS))
+        raise InputError(f"Unsupported format: {output_format}. Valid: {valid}")
+
     resolved_voice = voice or get_default("default_voice")
     if not resolved_voice:
         raise InputError(
@@ -216,6 +260,21 @@ def _run_tts(
     resolved_model = model or get_default("default_model") or "sona_speech_2"
     resolved_lang = lang or get_default("default_lang") or "ko"
 
+    # Validate model-parameter compatibility
+    validate_params(
+        resolved_model,
+        speed=speed,
+        pitch_shift=pitch,
+        pitch_variance=pitch_variance,
+        similarity=similarity,
+        text_guidance=text_guidance,
+        stream=stream if stream else None,
+    )
+
+    voice_settings = _build_settings_kwargs(
+        speed, pitch, pitch_variance, similarity, text_guidance
+    )
+
     # Batch mode: directory input + outdir
     if _is_batch_input(input) and outdir:
         _run_batch(
@@ -225,7 +284,9 @@ def _run_tts(
             resolved_voice,
             resolved_model,
             resolved_lang,
+            style,
             fail_fast,
+            **voice_settings,
         )
         return
 
@@ -244,6 +305,8 @@ def _run_tts(
             resolved_model,
             resolved_lang,
             output,
+            style=style,
+            **voice_settings,
         )
         return
 
@@ -260,6 +323,8 @@ def _run_tts(
         model=resolved_model,
         lang=resolved_lang,
         output_format=output_format,
+        style=style,
+        **voice_settings,
     )
 
     if out_path is None:
@@ -283,7 +348,7 @@ def register_tts_command(app: typer.Typer) -> None:
     """Register TTS command directly on the main app."""
 
     @app.command("tts")
-    def tts_cmd(
+    def tts_cmd(  # noqa: PLR0913
         text: Optional[str] = typer.Argument(None, help="Text to synthesize."),
         input: Optional[str] = typer.Option(
             None, "--input", "-i", help="Path to text file."
@@ -297,11 +362,12 @@ def register_tts_command(app: typer.Typer) -> None:
         output_format: str = typer.Option(
             "wav",
             "--output-format",
-            help="Audio format (wav, mp3, ogg, flac).",
+            help="Audio format: wav, mp3.",
         ),
         voice: Optional[str] = typer.Option(None, "--voice", "-v", help="Voice ID."),
         model: Optional[str] = typer.Option(None, "--model", "-m", help="TTS model."),
         lang: Optional[str] = typer.Option(None, "--lang", "-l", help="Language code."),
+        style: Optional[str] = typer.Option(None, "--style", "-s", help="Voice style."),
         format: str = typer.Option(
             "text",
             "--format",
@@ -323,6 +389,17 @@ def register_tts_command(app: typer.Typer) -> None:
             "--stream",
             help="Stream audio to system output.",
         ),
+        speed: Optional[float] = typer.Option(None, "--speed", help="Speaking speed."),
+        pitch: Optional[float] = typer.Option(None, "--pitch", help="Pitch shift."),
+        pitch_variance: Optional[float] = typer.Option(
+            None, "--pitch-variance", help="Pitch variance."
+        ),
+        similarity: Optional[float] = typer.Option(
+            None, "--similarity", help="Voice similarity."
+        ),
+        text_guidance: Optional[float] = typer.Option(
+            None, "--text-guidance", help="Text guidance."
+        ),
     ) -> None:
         """Generate speech from text."""
         _run_tts(
@@ -333,10 +410,16 @@ def register_tts_command(app: typer.Typer) -> None:
             voice,
             model,
             lang,
+            style,
             format,
             outdir=outdir,
             fail_fast=fail_fast,
             stream=stream,
+            speed=speed,
+            pitch=pitch,
+            pitch_variance=pitch_variance,
+            similarity=similarity,
+            text_guidance=text_guidance,
         )
 
 
@@ -369,7 +452,8 @@ def register_predict_command(app: typer.Typer) -> None:
         if not resolved_voice:
             raise InputError(
                 "No voice specified. Use --voice <id> or "
-                "set a default: supertone config set default_voice <id>"
+                "set a default: "
+                "supertone config set default_voice <id>"
             )
 
         resolved_model = model or get_default("default_model") or "sona_speech_2"
