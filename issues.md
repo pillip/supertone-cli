@@ -780,7 +780,7 @@ Delete the workflow file.
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-016-declare-sdk-dependency
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
@@ -823,7 +823,7 @@ Revert the `pyproject.toml` change and run `uv sync` to restore the previous `uv
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 1d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-017-readme-rewrite
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
@@ -866,7 +866,7 @@ Revert `README.md` to the previous 4-line version.
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-018-add-license-file
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
@@ -906,7 +906,7 @@ Delete the `LICENSE` file. If `pyproject.toml` was modified, revert that change 
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 1d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-019-repo-cleanup
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
@@ -955,7 +955,7 @@ Run `git restore` to recover deleted files from the previous commit if needed.
 - PRD-Ref: NFR-001
 - Priority: P0
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-020-pyproject-metadata
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
@@ -1015,11 +1015,11 @@ Revert `pyproject.toml` to the previous state.
 - PRD-Ref: NFR-001
 - Priority: P1
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-021-changelog
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/44
 - Depends-On: none
 
 #### Goal
@@ -1056,11 +1056,11 @@ Delete the `CHANGELOG.md` file and revert the `pyproject.toml` URL addition.
 - PRD-Ref: FR-009, NFR-005
 - Priority: P2
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-022-typed-auth-errors
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/47
 - Depends-On: none
 
 #### Goal
@@ -1098,11 +1098,11 @@ Revert the commit. The string heuristic is restored.
 - PRD-Ref: NFR-004
 - Priority: P2
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-023-client-attr-helper
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/48
 - Depends-On: none
 
 #### Goal
@@ -1138,11 +1138,11 @@ Revert the commit. No persistent state is created.
 - PRD-Ref: FR-005
 - Priority: P2
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-024-track-custom-voices-sdk-bug
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/46
 - Depends-On: none
 
 #### Goal
@@ -1177,11 +1177,11 @@ Revert the comment block and delete `docs/upstream_bugs.md` if it was created.
 - PRD-Ref: NFR-004
 - Priority: P2
 - Estimate: 1d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-025-integration-smoke-test
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/49
 - Depends-On: none
 
 #### Goal
@@ -1219,11 +1219,11 @@ Delete `tests/integration/` and remove the `integration` marker entry from `pypr
 - PRD-Ref: NFR-004
 - Priority: P1
 - Estimate: 0.5d
-- Status: todo
+- Status: done
 - Owner:
 - Branch: issue/ISSUE-026-consolidate-ruff-config
 - GH-Issue: https://github.com/pillip/supertone-cli/issues/32
-- PR:
+- PR: https://github.com/pillip/supertone-cli/pull/45
 - Depends-On: none
 
 #### Goal
