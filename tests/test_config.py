@@ -2,8 +2,10 @@
 
 import os
 import stat
+import sys
 from unittest.mock import patch
 
+import pytest
 from typer.testing import CliRunner
 
 from supertone_cli.cli import app
@@ -26,6 +28,10 @@ def test_save_config_creates_toml(tmp_path):
     assert 'api_key = "sk-test123"' in content
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows NTFS does not honor POSIX mode bits; chmod(0o600) is a no-op.",
+)
 def test_save_config_sets_600_permissions(tmp_path):
     from supertone_cli.config import save_config
 

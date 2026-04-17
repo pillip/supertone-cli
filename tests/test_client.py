@@ -4,7 +4,6 @@ from dataclasses import FrozenInstanceError
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from supertone_cli.errors import APIError, AuthError
 
 # ── Data model tests ─────────────────────────────────────────────────
@@ -201,9 +200,7 @@ def test_predict_duration_returns_prediction():
         assert pred.duration_seconds == 3.2
 
 
-def test_clone_voice_returns_clone_result():
-    import tempfile
-
+def test_clone_voice_returns_clone_result(tmp_path):
     from supertone_cli.client import clone_voice
     from supertone_cli.models import CloneResult
 
@@ -212,17 +209,16 @@ def test_clone_voice_returns_clone_result():
     mock_response.voice_id = "clone-1"
     mock_client.custom_voices.create_cloned_voice.return_value = mock_response
 
-    with tempfile.NamedTemporaryFile(suffix=".wav") as f:
-        f.write(b"fake-audio")
-        f.flush()
+    sample = tmp_path / "sample.wav"
+    sample.write_bytes(b"fake-audio")
 
-        with patch(
-            "supertone_cli.client.get_client",
-            return_value=mock_client,
-        ):
-            result = clone_voice("my-voice", f.name)
-            assert isinstance(result, CloneResult)
-            assert result.voice_id == "clone-1"
+    with patch(
+        "supertone_cli.client.get_client",
+        return_value=mock_client,
+    ):
+        result = clone_voice("my-voice", str(sample))
+        assert isinstance(result, CloneResult)
+        assert result.voice_id == "clone-1"
 
 
 def test_get_usage_returns_usage():
