@@ -36,4 +36,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI pipeline with GitHub Actions (lint + test + coverage gate ≥ 80%, Python 3.12/3.13, ubuntu/macOS)
 - MIT license
 
-[0.1.0]: https://github.com/pillip/supertone-cli/releases/tag/v0.1.0
+[0.1.0]: https://github.com/supertone-inc/supertone-cli/releases/tag/v0.1.0

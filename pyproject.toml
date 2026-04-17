@@ -45,10 +45,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pillip/supertone-cli"
-Repository = "https://github.com/pillip/supertone-cli"
-Issues = "https://github.com/pillip/supertone-cli/issues"
-Changelog = "https://github.com/pillip/supertone-cli/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/supertone-inc/supertone-cli"
+Repository = "https://github.com/supertone-inc/supertone-cli"
+Issues = "https://github.com/supertone-inc/supertone-cli/issues"
+Changelog = "https://github.com/supertone-inc/supertone-cli/blob/main/CHANGELOG.md"
 
 [project.scripts]
 supertone = "supertone_cli.cli:main"

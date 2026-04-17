@@ -1,6 +1,6 @@
 # supertone-cli
 
-[![CI](https://github.com/pillip/supertone-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/pillip/supertone-cli/actions/workflows/ci.yml)
+[![CI](https://github.com/supertone-inc/supertone-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/supertone-inc/supertone-cli/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/supertone-cli.svg)](https://pypi.org/project/supertone-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -166,7 +166,7 @@ Streaming (`--stream`) currently requires `sona_speech_1`.
 ## Development
 
 ```bash
-git clone https://github.com/pillip/supertone-cli.git
+git clone https://github.com/supertone-inc/supertone-cli.git
 cd supertone-cli
 uv sync --extra dev
 uv run pytest -q
