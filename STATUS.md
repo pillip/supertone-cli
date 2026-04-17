@@ -1,6 +1,6 @@
 # STATUS — Supertone CLI
 
-**Last updated**: 2026-04-11
+**Last updated**: 2026-04-17
 **Current milestone**: Phase 1 — SDK 래퍼 CLI
 
 ---

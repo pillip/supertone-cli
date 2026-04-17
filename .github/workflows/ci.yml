@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.12", "3.13"]
 
     steps:
@@ -34,6 +34,7 @@ jobs:
         run: uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 
       - name: Startup benchmark
+        if: runner.os != 'Windows'
         run: |
           echo "Measuring startup time..."
           for i in $(seq 1 5); do

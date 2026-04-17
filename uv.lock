@@ -630,7 +630,6 @@ wheels = [
 
 [[package]]
 name = "supertone-cli"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "rich" },
@@ -662,7 +661,7 @@ requires-dist = [
     { name = "tomli-w", specifier = ">=1.0" },
     { name = "typer", specifier = ">=0.9,<1.0" },
 ]
-provides-extras = ["stream", "dev"]
+provides-extras = ["dev", "stream"]
 
 [[package]]
 name = "tomli-w"
